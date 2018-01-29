@@ -63,4 +63,16 @@ public class CssBlockParserTest {
             assertEquals(3, i);
         }
     }
+
+    @Test
+    public void testHeaderInterpolation () throws MiroException {
+        Tokenizer tokenizer = new Tokenizer("$class = test\ndiv.${$class}\n    margin 5px");
+        tokenizer.tokenize();
+        Parser parser = new Parser(tokenizer);
+        MiroStylesheet stylesheet = parser.parse();
+        Iterable<Block> elements = stylesheet.getBlocks();
+        for (Block element : elements)
+            assertEquals("div.test", ((MiroBlock) element).getHeader());
+    }
+
 }

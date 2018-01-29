@@ -1,8 +1,11 @@
 package parsing;
 
         import com.sirweb.miro.exceptions.MiroException;
+        import com.sirweb.miro.lexer.Token;
+        import com.sirweb.miro.lexer.TokenType;
         import com.sirweb.miro.lexer.Tokenizer;
         import com.sirweb.miro.parsing.Parser;
+        import com.sirweb.miro.parsing.values.Unit;
         import com.sirweb.miro.parsing.values.miro.Calculator;
         import com.sirweb.miro.parsing.values.miro.MiroValue;
         import com.sirweb.miro.parsing.values.miro.Numeric;
@@ -27,6 +30,22 @@ public class CalculatorTest {
     }
 
     @Test
+    public void testValues () throws MiroException {
+        Numeric pixel = new Numeric(5.0, Unit.PX);
+        assertEquals(5, (int) pixel.getValue());
+
+
+        Numeric em = new Numeric(16, Unit.EM);
+        assertEquals(1, (int) em.getValue());
+
+        Numeric rem = new Numeric(32, Unit.REM);
+        assertEquals(2, (int) rem.getValue());
+
+        Numeric tokEm = new Numeric(new Token("-3em", TokenType.DIMENSION_TOKEN));
+        assertEquals(-3, (int) tokEm.getValue());
+    }
+
+    @Test
     public void testAddNumerics () throws MiroException {
         Tokenizer tokenizer = new Tokenizer("5 + 10");
         tokenizer.tokenize();
@@ -34,6 +53,28 @@ public class CalculatorTest {
         Calculator calculator = new Calculator(parser);
         MiroValue result = calculator.eval();
         assertEquals(15, (int) ((Numeric) result).getNormalizedValue());
+    }
+
+    @Test
+    public void testConvertEmPx () throws MiroException {
+        Tokenizer tokenizer = new Tokenizer("5px + 1em");
+        tokenizer.tokenize();
+        Parser parser = new Parser(tokenizer);
+        Calculator calculator = new Calculator(parser);
+        MiroValue result = calculator.eval();
+        assertEquals(21, (int) ((Numeric) result).getValue());
+        assertEquals(Unit.PX, ((Numeric) result).getUnit());
+    }
+
+    @Test
+    public void testConvertPxEm () throws MiroException {
+        Tokenizer tokenizer = new Tokenizer("1em + 32px");
+        tokenizer.tokenize();
+        Parser parser = new Parser(tokenizer);
+        Calculator calculator = new Calculator(parser);
+        MiroValue result = calculator.eval();
+        assertEquals(3, (int) ((Numeric) result).getValue());
+        assertEquals(Unit.EM, ((Numeric) result).getUnit());
     }
 
     @Test

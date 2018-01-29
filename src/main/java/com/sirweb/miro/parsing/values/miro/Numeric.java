@@ -7,18 +7,26 @@ public class Numeric implements MiroValue {
     private double value;
     private Unit unit;
 
-    public Numeric (double normalizedValue, Unit unit) {
+    public Numeric (double value, Unit unit) {
         this.unit = unit;
-        this.value = normalizedValue;
+        this.value = value;
     }
 
     public Numeric (Token token) {
-        String unitString = (token.getToken() + " ").split("(?<=\\D)(?=\\d)|(?<=\\d)(?=\\D)")[1].toUpperCase().trim();
-        double tokenValue = Double.parseDouble(token.getToken().split("(?<=\\D)(?=\\d)|(?<=\\d)(?=\\D)")[0]);
+        boolean negative = false;
 
-        double val = tokenValue * Unit.forString(unitString).getMultiplier();
+        String tokenString = token.getToken();
 
-        this.value = val;
+        while (tokenString.startsWith("+") || tokenString.startsWith("-")) {
+            if (tokenString.startsWith("-"))
+                negative = !negative;
+            tokenString = tokenString.substring(1);
+        }
+
+        String unitString = (tokenString + " ").split("(?<=\\D)(?=\\d)|(?<=\\d)(?=\\D)")[1].toUpperCase().trim();
+        double tokenValue = Double.parseDouble(tokenString.split("(?<=\\D)(?=\\d)|(?<=\\d)(?=\\D)")[0]);
+
+        this.value = tokenValue * Unit.forString(unitString).getMultiplier() * (negative ? -1 : 1);
         this.unit = Unit.forString(unitString);
 
     }

@@ -29,14 +29,23 @@ public class MiroToCssConverter {
     }
 
     private void convertBlock (CssStylesheet cssStylesheet, MiroBlock block, String preHeader) {
-        String header = preHeader + block.getHeader();
+        String header = block.getHeader();
+
+        if (header.contains("&"))
+            header = header.replace("&", preHeader);
+        else
+            header = preHeader + " " + header;
+
+        header = header.trim();
+
         CssBlock cssBlock = cssStylesheet.hasBlock(header) ? cssStylesheet.getBlock(header)
                 : new CssBlock(header);
 
         for (Statement statement : block.getStatements())
             cssBlock.addStatement(new CssStatement(statement.getProperty(), statement.getValue().toString()));
 
-        cssStylesheet.addBlock(cssBlock);
+        if (!cssStylesheet.hasBlock(cssBlock.getHeader()))
+            cssStylesheet.addBlock(cssBlock);
 
         for (Block b : block.getBlocks())
             convertBlock(cssStylesheet, (MiroBlock) b, header);

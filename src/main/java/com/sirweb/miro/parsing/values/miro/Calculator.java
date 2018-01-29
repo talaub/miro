@@ -87,8 +87,16 @@ public class Calculator implements MiroValue {
                 multiValue.addValue(new Numeric(tokenizer.getNext()));
             } else if (tokenizer.nextTokenType() == TokenType.STRING_TOKEN) {
                 multiValue.addValue(new StringValue(tokenizer.getNext()));
-            } else if (tokenizer.nextTokenType() == TokenType.O_R_TOKEN)
+            } else if (tokenizer.nextTokenType() == TokenType.IDENT_TOKEN) {
+                Token token = tokenizer.getNext();
+                if (Color.knowsColor(token.getToken()))
+                    multiValue.addValue(new Color(Color.getDefaultColorDictionary().get(token.getToken())));
+                else
+                    multiValue.addValue(new Ident(token));
+            } else if (tokenizer.nextTokenType() == TokenType.O_R_TOKEN) {
                 multiValue.addValue(new Calculator(parser).eval());
+            } else if (tokenizer.nextTokenType() == TokenType.HASH_TOKEN)
+                multiValue.addValue(new Color(tokenizer.getNext().getToken()));
             if (sizeBefore == multiValue.size()) {
                 throw new MiroParserException("Could not parse value from token '" + tokenizer.getNext().getToken() + "'");
             }
@@ -105,7 +113,7 @@ public class Calculator implements MiroValue {
         Stack<Operator> operators = new Stack<>();
         parser.consumeWhitespaces();
 
-        parser.optional(TokenType.O_R_TOKEN);
+        //parser.optional(TokenType.O_R_TOKEN);
         do {
             if (tokenizer.nextTokenType() == TokenType.ARITHMETIC_TOKEN) {
                 Operator operator = Operator.toOperator(tokenizer.getNext().getToken());
@@ -121,17 +129,21 @@ public class Calculator implements MiroValue {
                 && tokenizer.nextTokenType() != TokenType.NEWLINE_TOKEN
                 && tokenizer.nextTokenType() != TokenType.SEMICOLON_TOKEN
                 && tokenizer.nextTokenType() != TokenType.COMMA_TOKEN
+                && tokenizer.nextTokenType() != TokenType.C_C_TOKEN
                 && tokenizer.nextTokenType() != TokenType.EOF);
         while (!operators.isEmpty())
             postfix.add(operators.pop());
 
-        parser.optional(TokenType.C_R_TOKEN);
+        //parser.optional(TokenType.C_R_TOKEN);
 
     }
 
     public MiroValue eval () {
         Stack<MiroValue> operands = new Stack<>();
         int position = 0;
+
+        if (operands.size() == 1)
+            return operands.pop();
 
         do {
             if (getPostfix().get(position) instanceof MiroValue)

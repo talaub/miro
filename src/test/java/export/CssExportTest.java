@@ -8,15 +8,18 @@ import org.junit.Test;
 
 import java.io.IOException;
 
+import static org.junit.Assert.assertEquals;
+
 public class CssExportTest {
     @Test
     public void testSimple () throws IOException {
         CssStylesheet stylesheet = new CssStylesheet();
         CssBlock block = new CssBlock("div");
-        CssStatement statement = new CssStatement("margin-right", "3px");
+        CssStatement statement = new CssStatement("margin-right", "3em");
         block.addStatement(statement);
         stylesheet.addBlock(block);
 
-        System.out.println(new CssExporter(stylesheet, false).export());
+        assertEquals("div {\n    margin-right: 3em;\n}\n\n", new CssExporter(stylesheet, false).export());
+
     }
 }

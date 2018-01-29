@@ -105,7 +105,15 @@ public class Parser {
         String header = "";
 
         do {
-            header += tokenizer.getNext().getToken();
+            if (tokenizer.nextTokenType() == TokenType.MIRO_INTERPOLATION_TOKEN) {
+                consume(TokenType.MIRO_INTERPOLATION_TOKEN);
+                consumeWhitespaces();
+                header += new Calculator(this).eval();
+                consumeWhitespaces();
+                consume(TokenType.C_C_TOKEN);
+            }
+            else
+                header += tokenizer.getNext().getToken();
         } while (tokenizer.nextTokenType() != TokenType.NEWLINE_TOKEN);
 
         MiroBlock block = new MiroBlock(header);

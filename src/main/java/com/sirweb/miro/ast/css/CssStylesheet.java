@@ -1,7 +1,5 @@
 package com.sirweb.miro.ast.css;
 
-import com.sirweb.miro.ast.Stylesheet;
-
 import java.util.ArrayList;
 import java.util.List;
 
