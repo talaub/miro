@@ -77,6 +77,28 @@ public class ValueFuncTest {
         assertEquals(255, (int) ((Color) s.symbolTable().getSymbol("test")).getBlue());
     }
 
+    @Test
+    public void stringIsEmpty () throws MiroException {
+        Tokenizer tokenizer = new Tokenizer("$empty = ''.isEmpty(); $not-empty = 'test'.isEmpty()");
+        tokenizer.tokenize();
+        Parser parser = new Parser(tokenizer);
+        MiroStylesheet s = parser.parse();
+        assertTrue(s.symbolTable().hasSymbol("empty"));
+        assertTrue(s.symbolTable().hasSymbol("not-empty"));
+        assertEquals("TRUE", s.symbolTable().getSymbol("empty").toString());
+        assertEquals("FALSE", s.symbolTable().getSymbol("not-empty").toString());
+    }
+
+    @Test
+    public void stringLength () throws MiroException {
+        Tokenizer tokenizer = new Tokenizer("$length = 'ABCD'.length()");
+        tokenizer.tokenize();
+        Parser parser = new Parser(tokenizer);
+        MiroStylesheet s = parser.parse();
+        assertTrue(s.symbolTable().hasSymbol("length"));
+        assertEquals(4, (int) ((Numeric)s.symbolTable().getSymbol("length")).getValue());
+    }
+
     @Test(expected = MiroUnimplementedFuncException.class)
     public void unknownFunction () throws MiroException {
         Tokenizer tokenizer = new Tokenizer("$test = #ff0000.bla()");
