@@ -120,6 +120,9 @@ public class Tokenizer {
         tokenDatas.add(new TokenData(Pattern.compile("^("+ident+")"), TokenType.IDENT_TOKEN));
 
 
+        tokenDatas.add(new TokenData(Pattern.compile("^(\\.)"), TokenType.MIRO_DOT_TOKEN));
+
+
 
 
         tokenDatas.add(new TokenData(Pattern.compile("^(\\()"), TokenType.O_R_TOKEN));

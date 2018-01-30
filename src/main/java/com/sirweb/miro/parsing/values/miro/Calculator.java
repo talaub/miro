@@ -1,17 +1,26 @@
 package com.sirweb.miro.parsing.values.miro;
 
 import com.sirweb.miro.exceptions.MiroCalculationException;
+import com.sirweb.miro.exceptions.MiroFuncParameterException;
 import com.sirweb.miro.exceptions.MiroParserException;
+import com.sirweb.miro.exceptions.MiroUnimplementedFuncException;
 import com.sirweb.miro.lexer.Token;
 import com.sirweb.miro.lexer.TokenType;
 import com.sirweb.miro.lexer.Tokenizer;
 import com.sirweb.miro.parsing.Parser;
+import com.sirweb.miro.parsing.values.Value;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Stack;
 
 public class Calculator implements MiroValue {
+
+    @Override
+    public Value callFunc(String functionName, List<MiroValue> parameters) throws MiroUnimplementedFuncException, MiroFuncParameterException {
+        return null;
+    }
 
     public enum Operator {
         AND(1),
@@ -67,45 +76,6 @@ public class Calculator implements MiroValue {
         this.postfix = new ArrayList<>();
         parseCalculation();
     }
-    private MiroValue parseValue () throws MiroParserException {
-        parser.consumeWhitespaces();
-
-        MultiValue multiValue = new MultiValue();
-
-        do {
-            int sizeBefore = multiValue.size();
-            parser.consumeWhitespaces();
-            if (tokenizer.nextTokenType() == TokenType.MIRO_IDENT_TOKEN) {
-                Token token = tokenizer.getNext();
-                MiroValue value = parser.findSymbol(token.getToken().substring(1));
-                if (value == null)
-                    throw new MiroParserException("Unknown variable '" + token.getToken() + "'");
-                multiValue.addValue(value);
-            } else if (tokenizer.nextTokenType() == TokenType.NUMBER_TOKEN
-                    || tokenizer.nextTokenType() == TokenType.DIMENSION_TOKEN
-                    || tokenizer.nextTokenType() == TokenType.PERCENTAGE_TOKEN) {
-                multiValue.addValue(new Numeric(tokenizer.getNext()));
-            } else if (tokenizer.nextTokenType() == TokenType.STRING_TOKEN) {
-                multiValue.addValue(new StringValue(tokenizer.getNext()));
-            } else if (tokenizer.nextTokenType() == TokenType.IDENT_TOKEN) {
-                Token token = tokenizer.getNext();
-                if (Color.knowsColor(token.getToken()))
-                    multiValue.addValue(new Color(Color.getDefaultColorDictionary().get(token.getToken())));
-                else
-                    multiValue.addValue(new Ident(token));
-            } else if (tokenizer.nextTokenType() == TokenType.O_R_TOKEN) {
-                multiValue.addValue(new Calculator(parser).eval());
-            } else if (tokenizer.nextTokenType() == TokenType.HASH_TOKEN)
-                multiValue.addValue(new Color(tokenizer.getNext().getToken()));
-            if (sizeBefore == multiValue.size()) {
-                throw new MiroParserException("Could not parse value from token '" + tokenizer.getNext().getToken() + "'");
-            }
-            else
-                parser.consumeWhitespaces();
-        } while (tokenizer.nextTokenType() == TokenType.COMMA_TOKEN);
-
-        return multiValue.size() > 1 ? multiValue : multiValue.get(0);
-    }
 
     public List<Object> getPostfix () { return postfix; }
 
@@ -124,7 +94,7 @@ public class Calculator implements MiroValue {
                 operators.push(operator);
             }
             else
-                postfix.add(parseValue());
+                postfix.add(parser.parseValue());
         } while (tokenizer.nextTokenType() != TokenType.C_R_TOKEN
                 && tokenizer.nextTokenType() != TokenType.NEWLINE_TOKEN
                 && tokenizer.nextTokenType() != TokenType.SEMICOLON_TOKEN

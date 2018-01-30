@@ -54,6 +54,7 @@ public enum TokenType {
     MIRO_EXCLAMATION_TOKEN,
 
     MIRO_DEBUG_TOKEN,
+    MIRO_DOT_TOKEN,
     EOF
 
 

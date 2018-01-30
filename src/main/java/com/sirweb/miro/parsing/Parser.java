@@ -5,12 +5,18 @@ import com.sirweb.miro.ast.miro.MiroBlock;
 import com.sirweb.miro.ast.miro.MiroStatement;
 import com.sirweb.miro.ast.miro.MiroStylesheet;
 import com.sirweb.miro.exceptions.MiroException;
+import com.sirweb.miro.exceptions.MiroFuncParameterException;
 import com.sirweb.miro.exceptions.MiroParserException;
+import com.sirweb.miro.exceptions.MiroUnimplementedFuncException;
+import com.sirweb.miro.lexer.Token;
 import com.sirweb.miro.lexer.TokenType;
 import com.sirweb.miro.lexer.Tokenizer;
-import com.sirweb.miro.parsing.values.miro.Calculator;
-import com.sirweb.miro.parsing.values.miro.MiroValue;
+import com.sirweb.miro.parsing.values.Value;
+import com.sirweb.miro.parsing.values.miro.*;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Stack;
 
 public class Parser {
@@ -48,6 +54,70 @@ public class Parser {
             consume(optionalType);
     }
 
+    public MiroValue parseValue () throws MiroParserException, MiroFuncParameterException, MiroUnimplementedFuncException {
+        consumeWhitespaces();
+
+        if (tokenizer.nextTokenType() == TokenType.C_R_TOKEN)
+            return null;
+
+        MultiValue multiValue = new MultiValue();
+
+        do {
+            MiroValue parsedValue = null;
+            int sizeBefore = multiValue.size();
+            consumeWhitespaces();
+            if (tokenizer.nextTokenType() == TokenType.MIRO_IDENT_TOKEN) {
+                Token token = tokenizer.getNext();
+                parsedValue = findSymbol(token.getToken().substring(1));
+                if (parsedValue == null)
+                    throw new MiroParserException("Unknown variable '" + token.getToken() + "'");
+            } else if (tokenizer.nextTokenType() == TokenType.NUMBER_TOKEN
+                    || tokenizer.nextTokenType() == TokenType.DIMENSION_TOKEN
+                    || tokenizer.nextTokenType() == TokenType.PERCENTAGE_TOKEN) {
+                parsedValue = new Numeric(tokenizer.getNext());
+            } else if (tokenizer.nextTokenType() == TokenType.STRING_TOKEN) {
+                parsedValue = new StringValue(tokenizer.getNext());
+            } else if (tokenizer.nextTokenType() == TokenType.IDENT_TOKEN) {
+                Token token = tokenizer.getNext();
+                if (Color.knowsColor(token.getToken()))
+                    parsedValue = new Color(Color.getDefaultColorDictionary().get(token.getToken()));
+                else
+                    parsedValue = new Ident(token);
+            } else if (tokenizer.nextTokenType() == TokenType.O_R_TOKEN) {
+                parsedValue = new Calculator(this).eval();
+            } else if (tokenizer.nextTokenType() == TokenType.HASH_TOKEN)
+                parsedValue = new Color(tokenizer.getNext().getToken());
+
+            if (parsedValue == null)
+                throw new MiroParserException("Could not parse value from token '" + tokenizer.getNext().getToken() + "'");
+
+            while (tokenizer.nextTokenType() == TokenType.FUNCTION_TOKEN) {
+                String funcName = consume(TokenType.FUNCTION_TOKEN);
+                funcName = funcName.substring(1, funcName.length() - 1);
+                MiroValue parameterValue = parseValue();
+                List<MiroValue> parameters = new ArrayList<>();
+                if (parameterValue == null) {}
+                else if (parameterValue instanceof MultiValue) {
+                    for (int i = 0; i < ((MultiValue) parameterValue).size(); i++)
+                        parameters.add(((MultiValue) parameterValue).get(i));
+                }
+                else {
+                    parameters.add(parameterValue);
+                }
+
+                consume(TokenType.C_R_TOKEN);
+                parsedValue = (MiroValue) parsedValue.callFunc(funcName, parameters);
+            }
+
+            multiValue.addValue(parsedValue);
+
+            consumeWhitespaces();
+
+        } while (tokenizer.nextTokenType() == TokenType.COMMA_TOKEN);
+
+        return multiValue.size() > 1 ? multiValue : multiValue.get(0);
+    }
+
     public MiroStylesheet parse () throws MiroException {
         stack = new Stack<>();
         parseStylesheet();
@@ -67,7 +137,7 @@ public class Parser {
         optional(TokenType.SEMICOLON_TOKEN);
     }
 
-    public MiroValue findSymbol (String symbolName) {
+    private MiroValue findSymbol (String symbolName) {
         Stack<Element> tmpStack = (Stack<Element>) stack.clone();
         while (!tmpStack.empty()) {
             if (tmpStack.peek().symbolTable().hasSymbol(symbolName))
