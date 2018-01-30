@@ -1,6 +1,7 @@
 package com.sirweb.miro.parsing.values.miro;
 
 import com.sirweb.miro.exceptions.MiroFuncParameterException;
+import com.sirweb.miro.exceptions.MiroParserException;
 import com.sirweb.miro.exceptions.MiroUnimplementedFuncException;
 import com.sirweb.miro.lexer.Token;
 import com.sirweb.miro.parsing.values.Unit;
@@ -59,7 +60,7 @@ public class Numeric implements MiroValue {
     }
 
     @Override
-    public Value callFunc(String functionName, List<MiroValue> parameters) throws MiroUnimplementedFuncException, MiroFuncParameterException {
+    public Value callFunc(String functionName, List<MiroValue> parameters) throws MiroParserException {
         return null;
     }
 }

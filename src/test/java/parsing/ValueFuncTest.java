@@ -2,12 +2,15 @@ package parsing;
 
 import com.sirweb.miro.ast.miro.MiroStylesheet;
 import com.sirweb.miro.exceptions.MiroException;
+import com.sirweb.miro.exceptions.MiroIndentationException;
+import com.sirweb.miro.exceptions.MiroIndexOutOfBoundsException;
 import com.sirweb.miro.exceptions.MiroUnimplementedFuncException;
 import com.sirweb.miro.lexer.Tokenizer;
 import com.sirweb.miro.parsing.Parser;
 import com.sirweb.miro.parsing.values.miro.Color;
 import com.sirweb.miro.parsing.values.miro.MiroValue;
 import com.sirweb.miro.parsing.values.miro.Numeric;
+import com.sirweb.miro.parsing.values.miro.StringValue;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -87,6 +90,24 @@ public class ValueFuncTest {
         assertTrue(s.symbolTable().hasSymbol("not-empty"));
         assertEquals("TRUE", s.symbolTable().getSymbol("empty").toString());
         assertEquals("FALSE", s.symbolTable().getSymbol("not-empty").toString());
+    }
+
+    @Test
+    public void stringChar () throws MiroException {
+        Tokenizer tokenizer = new Tokenizer("$c = 'ABCD'.char(2)");
+        tokenizer.tokenize();
+        Parser parser = new Parser(tokenizer);
+        MiroStylesheet s = parser.parse();
+        assertTrue(s.symbolTable().hasSymbol("c"));
+        assertEquals("C", ((StringValue)s.symbolTable().getSymbol("c")).getValue());
+    }
+
+    @Test(expected = MiroIndexOutOfBoundsException.class)
+    public void stringCharFail () throws MiroException {
+        Tokenizer tokenizer = new Tokenizer("$c = 'ABCD'.char(8)");
+        tokenizer.tokenize();
+        Parser parser = new Parser(tokenizer);
+        parser.parse();
     }
 
     @Test

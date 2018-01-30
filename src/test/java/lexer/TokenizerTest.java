@@ -42,6 +42,13 @@ public class TokenizerTest {
         tokenizer.tokenize();
     }
 
+    @Test(expected = MiroTokenizerException.class)
+    public void unclosedString () throws MiroException {
+        String code = "'test";
+        Tokenizer tokenizer = new Tokenizer(code);
+        tokenizer.tokenize();
+    }
+
     @Test
     public void testEof () throws MiroException {
         Tokenizer tokenizer = new Tokenizer("$code");

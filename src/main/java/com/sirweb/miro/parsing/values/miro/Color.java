@@ -1,6 +1,7 @@
 package com.sirweb.miro.parsing.values.miro;
 
 import com.sirweb.miro.exceptions.MiroFuncParameterException;
+import com.sirweb.miro.exceptions.MiroParserException;
 import com.sirweb.miro.exceptions.MiroUnimplementedFuncException;
 import com.sirweb.miro.parsing.values.Unit;
 import com.sirweb.miro.parsing.values.Value;
@@ -207,7 +208,7 @@ public class Color implements MiroValue {
     }
 
     @Override
-    public Value callFunc(String functionName, List<MiroValue> parameters) throws MiroUnimplementedFuncException, MiroFuncParameterException {
+    public Value callFunc(String functionName, List<MiroValue> parameters) throws MiroParserException {
         switch (functionName) {
             case "getRed":
                 if (parameters.size() != 0)
@@ -239,7 +240,7 @@ public class Color implements MiroValue {
                     throw new MiroFuncParameterException(functionName, 1, parameters.size());
                 MiroValue valueGreen = parameters.get(0);
                 if (!(valueGreen instanceof Numeric))
-                    throw new MiroFuncParameterException("setRed function parameter has to be numeric");
+                    throw new MiroFuncParameterException("setGreen function parameter has to be numeric");
                 if (((Numeric) valueGreen).getUnit() == Unit.NONE)
                     green = (int) ((Numeric) valueGreen).getValue();
                 else if (((Numeric) valueGreen).getUnit() == Unit.PERCENT)
@@ -252,7 +253,7 @@ public class Color implements MiroValue {
                     throw new MiroFuncParameterException(functionName, 1, parameters.size());
                 MiroValue valueBlue = parameters.get(0);
                 if (!(valueBlue instanceof Numeric))
-                    throw new MiroFuncParameterException("setRed function parameter has to be numeric");
+                    throw new MiroFuncParameterException("setBlue function parameter has to be numeric");
                 if (((Numeric) valueBlue).getUnit() == Unit.NONE)
                     blue = (int) ((Numeric) valueBlue).getValue();
                 else if (((Numeric) valueBlue).getUnit() == Unit.PERCENT)
