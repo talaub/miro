@@ -4,26 +4,26 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CssStylesheet {
-    private List<CssBlock> blocks;
+    private List<CssElement> elements;
 
     public CssStylesheet () {
-        this.blocks = new ArrayList<>();
+        this.elements = new ArrayList<>();
     }
 
-    public List<CssBlock> getBlocks () { return blocks; }
+    public List<CssElement> getElements () { return elements; }
 
     public boolean hasBlock (String header) {
-        return getBlock(header) != null;
+        return getElement(header) != null;
     }
 
-    public CssBlock getBlock (String header) {
-        for (CssBlock block : blocks)
-            if (block.getHeader().equals(header))
-                return block;
+    public CssElement getElement (String header) {
+        for (CssElement element : elements)
+            if (element.getHeader().equals(header))
+                return element;
         return null;
     }
 
-    public void addBlock(CssBlock cssBlock) {
-        blocks.add(cssBlock);
+    public void addElement(CssElement cssElement) {
+        elements.add(cssElement);
     }
 }

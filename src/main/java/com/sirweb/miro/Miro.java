@@ -12,6 +12,8 @@ import com.sirweb.miro.util.Reader;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
+import java.io.PrintWriter;
 
 public class Miro {
     private MiroStylesheet stylesheet;
@@ -30,6 +32,10 @@ public class Miro {
         MiroToCssConverter converter = new MiroToCssConverter(stylesheet);
         CssStylesheet cssStylesheet = converter.convert();
         Exporter exporter = new CssExporter(cssStylesheet);
+        //PrintWriter pw = new PrintWriter(new File("/Users/taminolaub/Desktop/test.css"));
+        PrintStream ps = new PrintStream(new File("/Users/taminolaub/Desktop/test.css"));
+        exporter.export(ps);
+        ps.close();
         return exporter.export();
     }
 }

@@ -17,7 +17,7 @@ public class CssExportTest {
         CssBlock block = new CssBlock("div");
         CssStatement statement = new CssStatement("margin-right", "3em");
         block.addStatement(statement);
-        stylesheet.addBlock(block);
+        stylesheet.addElement(block);
 
         assertEquals("div {\n    margin-right: 3em;\n}\n\n", new CssExporter(stylesheet, false).export());
 

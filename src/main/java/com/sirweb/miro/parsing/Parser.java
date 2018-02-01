@@ -2,6 +2,7 @@ package com.sirweb.miro.parsing;
 
 import com.sirweb.miro.ast.Element;
 import com.sirweb.miro.ast.miro.MiroBlock;
+import com.sirweb.miro.ast.miro.MiroMediaQuery;
 import com.sirweb.miro.ast.miro.MiroStatement;
 import com.sirweb.miro.ast.miro.MiroStylesheet;
 import com.sirweb.miro.exceptions.MiroException;
@@ -161,7 +162,9 @@ public class Parser {
     }
 
     private void parseCss () throws MiroException {
-        if (tokenizer.lineOpensBlock()) {
+        if (tokenizer.nextTokenType() == TokenType.AT_KEYWORD_TOKEN)
+            parseAtExpression();
+        else if (tokenizer.lineOpensBlock()) {
             if (tokenizer.nextTokenType() == TokenType.MIRO_NESTPROP_TOKEN)
                 parseNestProp();
             else
@@ -199,7 +202,8 @@ public class Parser {
         else
             consume(TokenType.EOF);
 
-        stack.pop();
+        if (tokenizer.getNextTokenTypeNotWhitespaceOrNewline() != TokenType.MIRO_INDENT_TOKEN)
+            stack.pop();
     }
 
     private void parseBlockContent () throws MiroException {
@@ -251,5 +255,47 @@ public class Parser {
         }
         consumeNewlines();
         optional(TokenType.MIRO_DEDENT_TOKEN);
+    }
+
+    private void parseAtExpression () throws MiroException {
+        String tokenString = tokenizer.getNext().getToken().substring(1).toLowerCase();
+
+        switch (tokenString) {
+            case "media":
+                parseMediaQuery();
+        }
+    }
+
+    private void parseMediaQuery () throws MiroException {
+        String mediaString = "";
+
+        while (tokenizer.nextTokenType() != TokenType.NEWLINE_TOKEN
+                && tokenizer.nextTokenType() != TokenType.EOF) {
+            if (tokenizer.nextTokenType() == TokenType.MIRO_INTERPOLATION_TOKEN) {
+                consume(TokenType.MIRO_INTERPOLATION_TOKEN);
+
+                Calculator calculator = new Calculator(this);
+                mediaString += calculator.eval().toString();
+
+                consume(TokenType.C_C_TOKEN);
+            }
+            else {
+                mediaString += tokenizer.getNext().getToken();
+            }
+        }
+
+        MiroBlock block = new MiroMediaQuery(mediaString);
+
+        stack.peek().addBlock(block);
+        stack.push(block);
+
+        consumeNewlines();
+        consume(TokenType.MIRO_INDENT_TOKEN);
+        parseBlockContent();
+        if (tokenizer.nextTokenType() == TokenType.MIRO_DEDENT_TOKEN)
+            consume(TokenType.MIRO_DEDENT_TOKEN);
+        else
+            consume(TokenType.EOF);
+        stack.pop();
     }
 }

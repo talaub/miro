@@ -157,6 +157,8 @@ public class Tokenizer {
             if (str.charAt(0) == '\n') {
                 tokenstream.add(new Token("\n", TokenType.NEWLINE_TOKEN));
                 str = str.substring(1);
+                if (str.isEmpty())
+                    break;
                 int n = 0;
                 while (str.charAt(0) == ' ') {
                     n++;
@@ -166,11 +168,11 @@ public class Tokenizer {
                     throw new MiroIndentationException();
                 n /= 4;
                 if (n > level) {
-                    tokenstream.add(new Token(">", TokenType.MIRO_INDENT_TOKEN));
+                    tokenstream.add(new Token("", TokenType.MIRO_INDENT_TOKEN));
                     level++;
                 }
                 while (n < level) {
-                    tokenstream.add(new Token("<", TokenType.MIRO_DEDENT_TOKEN));
+                    tokenstream.add(new Token("", TokenType.MIRO_DEDENT_TOKEN));
                     level--;
                     if (level < n)
                         throw new MiroIndentationException();
@@ -243,6 +245,15 @@ public class Tokenizer {
         tokenizer.getNext();
         return tokenizer.nextTokenType() == TokenType.MIRO_INDENT_TOKEN;
 
+    }
+
+    public TokenType getNextTokenTypeNotWhitespaceOrNewline () throws MiroTokenizerException, MiroIndentationException {
+        Tokenizer tokenizer = this.clone();
+        tokenizer.tokenize();
+        while (tokenizer.nextTokenType() == TokenType.NEWLINE_TOKEN
+                || tokenizer.nextTokenType() == TokenType.WHITESPACE_TOKEN)
+            tokenizer.getNext();
+        return tokenizer.nextTokenType();
     }
 
     public Tokenizer clone () {

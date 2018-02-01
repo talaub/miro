@@ -1,8 +1,6 @@
 package com.sirweb.miro.export;
 
-import com.sirweb.miro.ast.css.CssBlock;
-import com.sirweb.miro.ast.css.CssStatement;
-import com.sirweb.miro.ast.css.CssStylesheet;
+import com.sirweb.miro.ast.css.*;
 
 import java.io.*;
 
@@ -26,19 +24,36 @@ public class CssExporter implements Exporter {
     }
 
     public void export (OutputStream out) throws IOException {
-        for (CssBlock block : stylesheet.getBlocks()) {
-            if (minified)
-                out.write(new String (block.getHeader() + "{").getBytes());
-            else
-                out.write(new String (block.getHeader() + " {\n").getBytes());
+        for (CssElement element : stylesheet.getElements()) {
 
-            for (CssStatement statement : block.getStatements())
+            if (element instanceof CssMediaQuery) {
                 if (minified)
-                    out.write(new String (statement.getProperty() + ":" + statement.getValue() + ";").getBytes());
+                    out.write(new String (element.getHeader() + "{").getBytes());
                 else
-                    out.write(new String ("    "+statement.getProperty() + ": " + statement.getValue() + ";\n").getBytes());
+                    out.write(new String (element.getHeader() + " {\n").getBytes());
 
-            out.write(new String ("}"+(minified ? "":"\n\n")).getBytes());
+                for (CssBlock block : ((CssMediaQuery) element).getBlocks())
+                    exportBlock(out, block);
+
+                out.write(new String ("}"+(minified ? "":"\n\n")).getBytes());
+            }
+            else
+                exportBlock(out, (CssBlock) element);
         }
+    }
+
+    private void exportBlock (OutputStream out, CssBlock block) throws IOException {
+
+        if (minified)
+            out.write(new String (block.getHeader() + "{").getBytes());
+        else
+            out.write(new String (block.getHeader() + " {\n").getBytes());
+
+        for (CssStatement statement : block.getStatements())
+            if (minified)
+                out.write(new String(statement.getProperty() + ":" + statement.getValue() + ";").getBytes());
+            else
+                out.write(new String("    " + statement.getProperty() + ": " + statement.getValue() + ";\n").getBytes());
+        out.write(new String ("}"+(minified ? "":"\n\n")).getBytes());
     }
 }

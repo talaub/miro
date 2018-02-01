@@ -4,7 +4,7 @@ package com.sirweb.miro.ast.css;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CssBlock {
+public class CssBlock implements CssElement {
     private String header;
     private List<CssStatement> statements;
 
