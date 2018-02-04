@@ -263,6 +263,10 @@ public class Parser {
         switch (tokenString) {
             case "media":
                 parseMediaQuery();
+                break;
+            case "if":
+                parseMediaIf();
+                break;
         }
     }
 
@@ -297,5 +301,130 @@ public class Parser {
         else
             consume(TokenType.EOF);
         stack.pop();
+    }
+
+    private void parseMediaIf () throws MiroException {
+        String mediaString = "";
+        do {
+            consumeWhitespaces();
+            mediaString += parseMediaIfArgument();
+
+            consumeWhitespaces();
+
+            if (tokenizer.nextTokenType() == TokenType.COLON_TOKEN) break;
+
+            if (tokenizer.nextTokenType() == TokenType.IDENT_TOKEN) {
+                Token currentToken = tokenizer.getNext();
+                if ("and".equals(currentToken.getToken()))
+                    mediaString += " and ";
+                else if ("or".equals(currentToken.getToken()))
+                    mediaString += ", ";
+                else
+                    throw new MiroParserException("Unexpected token " + currentToken + " expected 'and', 'or', '||', '&&'");
+            }
+            else if(tokenizer.nextTokenType() == TokenType.ARITHMETIC_TOKEN) {
+
+                Token currentToken = tokenizer.getNext();
+                if ("&&".equals(currentToken.getToken()))
+                    mediaString += " and ";
+                else if ("||".equals(currentToken.getToken()))
+                    mediaString += ", ";
+                else
+                    throw new MiroParserException("Unexpected token " + currentToken + " expected 'and', 'or', '||', '&&'");
+            }
+            else
+                throw new MiroParserException("Unexpected token " + tokenizer.getNext().getToken() + " expected 'and', 'or', '||', '&&'");
+
+            consumeWhitespaces();
+
+        } while (tokenizer.nextTokenType() != TokenType.COLON_TOKEN);
+
+        consume(TokenType.COLON_TOKEN);
+
+        MiroBlock block = new MiroMediaQuery(mediaString);
+
+        stack.peek().addBlock(block);
+        stack.push(block);
+
+        consumeNewlines();
+        consume(TokenType.MIRO_INDENT_TOKEN);
+        parseBlockContent();
+        if (tokenizer.nextTokenType() == TokenType.MIRO_DEDENT_TOKEN)
+            consume(TokenType.MIRO_DEDENT_TOKEN);
+        else
+            consume(TokenType.EOF);
+        stack.pop();
+
+    }
+
+    private String parseMediaIfArgument () throws MiroException {
+        consume(TokenType.O_R_TOKEN);
+        consumeWhitespaces();
+        String property = consume(TokenType.IDENT_TOKEN);
+
+        consumeWhitespaces();
+
+        String comparisonOperator = null;
+
+        if (tokenizer.nextTokenType() == TokenType.ARITHMETIC_TOKEN)
+            comparisonOperator = consume(TokenType.ARITHMETIC_TOKEN);
+        else if (tokenizer.nextTokenType() == TokenType.EQUAL_EQUAL_TOKEN)
+            comparisonOperator = consume(TokenType.EQUAL_EQUAL_TOKEN);
+        else if (tokenizer.nextTokenType() == TokenType.IDENT_TOKEN) {
+            comparisonOperator = consume(TokenType.IDENT_TOKEN);
+            if ("is".equals(comparisonOperator))
+                comparisonOperator = "==";
+        }
+        else
+            throw new MiroParserException("Unknown comparison operator "+tokenizer.getNext().getToken());
+
+        consumeWhitespaces();
+
+        MiroValue value = parseValue();
+        consume(TokenType.C_R_TOKEN);
+
+        if ("width".equals(property) || "device-width".equals(property) || "device-height".equals(property) || "color".equals(property) || "color-index".equals(property) || "monochrome".equals(property) || "grid".equals(property)) {
+            if (!(value instanceof Numeric))
+                throw new MiroParserException("Media-if property '"+property+"' only takes values of type Number");
+
+            if ("<=".equals(comparisonOperator))
+                return "(max-"+property+": " + value.toString() + ")";
+            else if (">=".equals(comparisonOperator))
+                return "(min-"+property+": " + value.toString() + ")";
+            else if ("<".equals(comparisonOperator))
+                return "(max-"+property+": " + (((Numeric) value).getValue() - 1) + ((Numeric) value).getUnit() + ")";
+            else if (">".equals(comparisonOperator))
+                return "(min-"+property+": " + (((Numeric) value).getValue() + 1) + ((Numeric) value).getUnit() + ")";
+            else if ("==".equals(comparisonOperator))
+                return "("+property+": " + value.toString() + ")";
+            else
+                throw new MiroParserException("Media-if property '"+property+"' cannot deal with comparison operator '"+comparisonOperator+"'");
+
+
+        }
+        else if ("orientation".equals(property) || "light-level".equals(property) || "pointer".equals(property)) {
+            if (!(value instanceof Ident))
+                throw new MiroException("Media-if property '"+property+"' only takes values of type Ident");
+
+            if ("==".equals(comparisonOperator))
+                return "("+property+": " + value.toString() + ")";
+            else
+                throw new MiroException("Media-if property '"+property+"' cannot deal with comparison operator '"+comparisonOperator+"'");
+
+        }
+        else if ("media".equals(property)) {
+            if (!(value instanceof Ident))
+                throw new MiroException("Media-if property 'media' only takes values of type Ident");
+
+            if ("==".equals(comparisonOperator))
+                return value.toString();
+            else if ("has".equals(comparisonOperator))
+                return "(" + value.toString()  + ")";
+            else
+                throw new MiroParserException("Media-if property 'media' cannot deal with comparison operator '"+comparisonOperator+"'");
+
+        }
+        else
+            throw new MiroParserException("Unknown Media-if property '" + property + "'");
     }
 }
