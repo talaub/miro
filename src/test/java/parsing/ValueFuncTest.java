@@ -127,4 +127,45 @@ public class ValueFuncTest {
         Parser parser = new Parser(tokenizer);
         parser.parse();
     }
+
+    @Test
+    public void listIsEmpty () throws MiroException {
+        Tokenizer tokenizer = new Tokenizer("$empty = [].isEmpty(); $not-empty = [test].isEmpty()");
+        tokenizer.tokenize();
+        Parser parser = new Parser(tokenizer);
+        MiroStylesheet s = parser.parse();
+        assertTrue(s.symbolTable().hasSymbol("empty"));
+        assertTrue(s.symbolTable().hasSymbol("not-empty"));
+        assertEquals("TRUE", s.symbolTable().getSymbol("empty").toString());
+        assertEquals("FALSE", s.symbolTable().getSymbol("not-empty").toString());
+    }
+
+    @Test
+    public void listLength () throws MiroException {
+        Tokenizer tokenizer = new Tokenizer("$length = [1,2,3,4].length()");
+        tokenizer.tokenize();
+        Parser parser = new Parser(tokenizer);
+        MiroStylesheet s = parser.parse();
+        assertTrue(s.symbolTable().hasSymbol("length"));
+        assertEquals(4, (int) ((Numeric)s.symbolTable().getSymbol("length")).getValue());
+    }
+
+    @Test
+    public void listGet () throws MiroException {
+        Tokenizer tokenizer = new Tokenizer("$c = ['test1', test2, 'test3', 12px].get(2)");
+        tokenizer.tokenize();
+        Parser parser = new Parser(tokenizer);
+        MiroStylesheet s = parser.parse();
+        assertTrue(s.symbolTable().hasSymbol("c"));
+        assertEquals("test3", ((StringValue)s.symbolTable().getSymbol("c")).getValue());
+    }
+
+    @Test(expected = MiroIndexOutOfBoundsException.class)
+    public void listGetFail () throws MiroException {
+        Tokenizer tokenizer = new Tokenizer("$c = [1,2,3,4].get(8)");
+        tokenizer.tokenize();
+        Parser parser = new Parser(tokenizer);
+        parser.parse();
+    }
+
 }
