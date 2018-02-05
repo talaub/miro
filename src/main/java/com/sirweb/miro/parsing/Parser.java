@@ -45,6 +45,14 @@ public class Parser {
             tokenizer.getNext();
     }
 
+    public void consumeNewlinesAndWhitespaces () {
+        while (tokenizer.nextTokenType() == TokenType.WHITESPACE_TOKEN
+                || tokenizer.nextTokenType() == TokenType.NEWLINE_TOKEN
+                || tokenizer.nextTokenType() == TokenType.MIRO_DEDENT_TOKEN
+                || tokenizer.nextTokenType() == TokenType.MIRO_INDENT_TOKEN)
+            tokenizer.getNext();
+    }
+
     public String consume (TokenType expectedType) throws MiroParserException {
         if (expectedType == tokenizer.nextTokenType())
             return tokenizer.getNext().getToken();
@@ -70,8 +78,10 @@ public class Parser {
 
         do {
 
-            consumeWhitespaces();
+            consumeNewlinesAndWhitespaces();
             optional(TokenType.COMMA_TOKEN);
+
+            consumeNewlinesAndWhitespaces();
 
             MiroValue parsedValue = null;
             int sizeBefore = multiValue.size();
@@ -116,6 +126,20 @@ public class Parser {
                 parsedValue = new Function(functionName, (MultiValue) parsedParameter);
 
             }
+            else if (tokenizer.nextTokenType() == TokenType.O_Q_TOKEN) {
+                parsedValue = new com.sirweb.miro.parsing.values.miro.List();
+                consume(TokenType.O_Q_TOKEN);
+                consumeNewlinesAndWhitespaces();
+                if (tokenizer.nextTokenType() != TokenType.C_Q_TOKEN) {
+                    MiroValue content = parseValue();
+                    if (content instanceof MultiValue)
+                        for (MiroValue value : ((MultiValue) content).getValues())
+                            ((com.sirweb.miro.parsing.values.miro.List) parsedValue).addValue(value);
+                    else
+                        ((com.sirweb.miro.parsing.values.miro.List) parsedValue).addValue(content);
+                }
+                consume(TokenType.C_Q_TOKEN);
+            }
 
             if (parsedValue == null)
                 throw new MiroParserException("Could not parse value from token '" + tokenizer.getNext().getToken() + "'");
@@ -139,8 +163,6 @@ public class Parser {
             }
 
             multiValue.addValue(parsedValue);
-
-            consumeWhitespaces();
 
         } while (tokenizer.nextTokenType() == TokenType.COMMA_TOKEN);
 

@@ -103,9 +103,12 @@ public class Calculator implements MiroValue {
                 && tokenizer.nextTokenType() != TokenType.C_C_TOKEN
                 && tokenizer.nextTokenType() != TokenType.EOF
                 && tokenizer.nextTokenType() != TokenType.MIRO_EXCLAMATION_TOKEN
-                && tokenizer.nextTokenType() != TokenType.MIRO_DEBUG_TOKEN);
+                && tokenizer.nextTokenType() != TokenType.MIRO_DEBUG_TOKEN
+                && tokenizer.nextTokenType() != TokenType.C_Q_TOKEN);
         while (!operators.isEmpty())
             postfix.add(operators.pop());
+
+        parser.consumeNewlinesAndWhitespaces();
 
         //parser.optional(TokenType.C_R_TOKEN);
 

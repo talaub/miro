@@ -23,6 +23,8 @@ public class MultiValue implements MiroValue {
 
     public MiroValue get (int index) { return values.get(index); }
 
+    public Iterable<MiroValue> getValues () { return values; }
+
     public String toString () {
         String val = "";
 
