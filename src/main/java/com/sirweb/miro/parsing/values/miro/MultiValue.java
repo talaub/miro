@@ -23,6 +23,15 @@ public class MultiValue implements MiroValue {
 
     public MiroValue get (int index) { return values.get(index); }
 
+    public String toString () {
+        String val = "";
+
+        for (MiroValue value : values)
+            val += ", " + value.toString();
+
+        return val.substring(2);
+    }
+
     @Override
     public Value callFunc(String functionName, List<MiroValue> parameters) throws MiroUnimplementedFuncException, MiroFuncParameterException {
         return null;

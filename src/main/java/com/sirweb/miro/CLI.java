@@ -10,7 +10,7 @@ import java.io.PrintWriter;
 public class CLI {
 
     public static void main (String[] args) {
-        String code = "div\n    color red.setRed(128)!";
+        String code = "div\n    transform translate(50px,30px)";
         //Reader reader = new Reader("/Users/taminolaub/Desktop/test.miro");
         //code = reader.read();
         System.out.println(code);

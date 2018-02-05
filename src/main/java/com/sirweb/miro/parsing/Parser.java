@@ -69,6 +69,10 @@ public class Parser {
         MultiValue multiValue = new MultiValue();
 
         do {
+
+            consumeWhitespaces();
+            optional(TokenType.COMMA_TOKEN);
+
             MiroValue parsedValue = null;
             int sizeBefore = multiValue.size();
             consumeWhitespaces();
@@ -94,6 +98,24 @@ public class Parser {
                 parsedValue = new Calculator(this).eval();
             } else if (tokenizer.nextTokenType() == TokenType.HASH_TOKEN)
                 parsedValue = new Color(tokenizer.getNext().getToken());
+            else if (tokenizer.nextTokenType() == TokenType.FUNCTION_TOKEN) {
+                String functionName = consume(TokenType.FUNCTION_TOKEN);
+                functionName = functionName.substring(0, functionName.length() - 1);
+
+                consumeWhitespaces();
+                MiroValue parsedParameter = parseValue();
+                consumeWhitespaces();
+                consume(TokenType.C_R_TOKEN);
+
+                if (!(parsedParameter instanceof MultiValue)) {
+                    MultiValue mv = new MultiValue();
+                    mv.addValue(parsedParameter);
+                    parsedParameter = mv;
+                }
+
+                parsedValue = new Function(functionName, (MultiValue) parsedParameter);
+
+            }
 
             if (parsedValue == null)
                 throw new MiroParserException("Could not parse value from token '" + tokenizer.getNext().getToken() + "'");

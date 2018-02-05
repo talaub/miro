@@ -9,7 +9,8 @@ public enum Unit {
     VW(1),
     VH(1),
     S(1000),
-    MS(1);
+    MS(1),
+    DEG(1);
 
     private final int multiplier;
 
