@@ -76,7 +76,7 @@ public class MiroToCssConverter {
                 : new CssBlock(header);
 
         for (Statement statement : block.getStatements())
-            cssBlock.addStatement(new CssStatement(statement.getProperty(), statement.getValue().toString()));
+            cssBlock.addStatement(new CssStatement(statement.getProperty(), statement.getValue().toString(), statement.isImportant()));
 
         if (currentMediaQuery == null) {
             if (!cssStylesheet.hasBlock(cssBlock.getHeader()))

@@ -1,6 +1,7 @@
 package com.sirweb.miro.parsing;
 
 import com.sirweb.miro.ast.Element;
+import com.sirweb.miro.ast.css.CssStylesheet;
 import com.sirweb.miro.ast.miro.MiroBlock;
 import com.sirweb.miro.ast.miro.MiroMediaQuery;
 import com.sirweb.miro.ast.miro.MiroStatement;
@@ -14,6 +15,7 @@ import com.sirweb.miro.lexer.TokenType;
 import com.sirweb.miro.lexer.Tokenizer;
 import com.sirweb.miro.parsing.values.Value;
 import com.sirweb.miro.parsing.values.miro.*;
+import com.sirweb.miro.util.Reader;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -50,9 +52,12 @@ public class Parser {
             throw new MiroParserException("Unexpected token '"+tokenizer.getNext().getToken() + "' expected " + expectedType);
     }
 
-    public void optional (TokenType optionalType) throws MiroParserException {
-        if (tokenizer.nextTokenType() == optionalType)
+    public boolean optional (TokenType optionalType) throws MiroParserException {
+        if (tokenizer.nextTokenType() == optionalType) {
             consume(optionalType);
+            return true;
+        }
+        return false;
     }
 
     public MiroValue parseValue () throws MiroParserException, MiroFuncParameterException, MiroUnimplementedFuncException {
@@ -67,6 +72,10 @@ public class Parser {
             MiroValue parsedValue = null;
             int sizeBefore = multiValue.size();
             consumeWhitespaces();
+
+            if (tokenizer.nextTokenType() == TokenType.MIRO_EXCLAMATION_TOKEN)
+                break;
+
             if (tokenizer.nextTokenType() == TokenType.MIRO_IDENT_TOKEN) {
                 Token token = tokenizer.getNext();
                 parsedValue = findSymbol(token.getToken().substring(1));
@@ -228,7 +237,10 @@ public class Parser {
 
         MiroValue value = new Calculator(this).eval();
 
-        stack.peek().addStatement(new MiroStatement(prependProperty + property, value));
+
+        consumeWhitespaces();
+        stack.peek().addStatement(new MiroStatement(prependProperty + property, value, optional(TokenType.MIRO_EXCLAMATION_TOKEN)));
+        consumeWhitespaces();
 
         optional(TokenType.SEMICOLON_TOKEN);
         consumeWhitespaces();
@@ -266,6 +278,9 @@ public class Parser {
                 break;
             case "if":
                 parseMediaIf();
+                break;
+            case "use":
+                parseUse();
                 break;
         }
     }
@@ -426,5 +441,29 @@ public class Parser {
         }
         else
             throw new MiroParserException("Unknown Media-if property '" + property + "'");
+    }
+
+    private void parseUse () throws MiroException {
+        consumeWhitespaces();
+
+        String filePath;
+
+        filePath = consume(TokenType.STRING_TOKEN);
+        filePath = filePath.substring(1, filePath.length() - 1);
+
+        String fileContent = new Reader(filePath).read();
+
+        Tokenizer tokenizer = new Tokenizer(fileContent);
+        tokenizer.tokenize();
+        Parser miroParser = new Parser(tokenizer);
+        MiroStylesheet miroStylesheet = miroParser.parse();
+
+        SymbolTable st = miroStylesheet.symbolTable();
+
+        for (String symbol : st.getSymbols())
+            stack.peek().symbolTable().setSymbol(symbol, st.getSymbol(symbol));
+
+        optional(TokenType.SEMICOLON_TOKEN);
+
     }
 }

@@ -51,9 +51,9 @@ public class CssExporter implements Exporter {
 
         for (CssStatement statement : block.getStatements())
             if (minified)
-                out.write(new String(statement.getProperty() + ":" + statement.getValue() + ";").getBytes());
+                out.write(new String(statement.getProperty() + ":" + statement.getValue() + (statement.isImportant() ? " !important" : "") +  ";").getBytes());
             else
-                out.write(new String("    " + statement.getProperty() + ": " + statement.getValue() + ";\n").getBytes());
+                out.write(new String("    " + statement.getProperty() + ": " + statement.getValue() + (statement.isImportant() ? " !important" : "") + ";\n").getBytes());
         out.write(new String ("}"+(minified ? "":"\n\n")).getBytes());
     }
 }

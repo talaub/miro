@@ -33,9 +33,9 @@ public class Miro {
         CssStylesheet cssStylesheet = converter.convert();
         Exporter exporter = new CssExporter(cssStylesheet);
         //PrintWriter pw = new PrintWriter(new File("/Users/taminolaub/Desktop/test.css"));
-        PrintStream ps = new PrintStream(new File("/Users/taminolaub/Desktop/test.css"));
-        exporter.export(ps);
-        ps.close();
+        //PrintStream ps = new PrintStream(new File("/Users/taminolaub/Desktop/test.css"));
+        //exporter.export(ps);
+        //ps.close();
         return exporter.export();
     }
 }

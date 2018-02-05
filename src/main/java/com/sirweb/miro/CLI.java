@@ -10,9 +10,9 @@ import java.io.PrintWriter;
 public class CLI {
 
     public static void main (String[] args) {
-        String code = "$m = 5px\np\n    margin-left $m\n    &.class\n        font-size 20em + 16px\n        position absolute\ndiv\n    position 7;top $m + 3\n    content 3 * 'Hallo'";
-        Reader reader = new Reader("/Users/taminolaub/Desktop/test.miro");
-        code = reader.read();
+        String code = "@use '/home/tamino/Schreibtisch/useable.miro'\ndiv\n    color $color-red";
+        //Reader reader = new Reader("/Users/taminolaub/Desktop/test.miro");
+        //code = reader.read();
         System.out.println(code);
         System.out.println("------------------------");
         try {

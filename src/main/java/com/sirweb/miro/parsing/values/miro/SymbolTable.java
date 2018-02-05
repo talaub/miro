@@ -21,4 +21,6 @@ public class SymbolTable {
     public void setSymbol(String symbolName, MiroValue value) {
         values.put(symbolName, value);
     }
+
+    public Iterable<String> getSymbols () { return values.keySet(); }
 }
