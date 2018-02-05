@@ -73,9 +73,6 @@ public class Parser {
             int sizeBefore = multiValue.size();
             consumeWhitespaces();
 
-            if (tokenizer.nextTokenType() == TokenType.MIRO_EXCLAMATION_TOKEN)
-                break;
-
             if (tokenizer.nextTokenType() == TokenType.MIRO_IDENT_TOKEN) {
                 Token token = tokenizer.getNext();
                 parsedValue = findSymbol(token.getToken().substring(1));
@@ -239,7 +236,17 @@ public class Parser {
 
 
         consumeWhitespaces();
-        stack.peek().addStatement(new MiroStatement(prependProperty + property, value, optional(TokenType.MIRO_EXCLAMATION_TOKEN)));
+
+        boolean important = false;
+
+        if (optional(TokenType.MIRO_EXCLAMATION_TOKEN))
+            important = true;
+        else if (tokenizer.nextTokenType() == TokenType.MIRO_DEBUG_TOKEN)
+            if ("!important".equals(tokenizer.getNext().getToken().toLowerCase()))
+                important = true;
+
+
+        stack.peek().addStatement(new MiroStatement(prependProperty + property, value, important));
         consumeWhitespaces();
 
         optional(TokenType.SEMICOLON_TOKEN);

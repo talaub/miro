@@ -95,12 +95,15 @@ public class Calculator implements MiroValue {
             }
             else
                 postfix.add(parser.parseValue());
+            parser.consumeWhitespaces();
         } while (tokenizer.nextTokenType() != TokenType.C_R_TOKEN
                 && tokenizer.nextTokenType() != TokenType.NEWLINE_TOKEN
                 && tokenizer.nextTokenType() != TokenType.SEMICOLON_TOKEN
                 && tokenizer.nextTokenType() != TokenType.COMMA_TOKEN
                 && tokenizer.nextTokenType() != TokenType.C_C_TOKEN
-                && tokenizer.nextTokenType() != TokenType.EOF);
+                && tokenizer.nextTokenType() != TokenType.EOF
+                && tokenizer.nextTokenType() != TokenType.MIRO_EXCLAMATION_TOKEN
+                && tokenizer.nextTokenType() != TokenType.MIRO_DEBUG_TOKEN);
         while (!operators.isEmpty())
             postfix.add(operators.pop());
 

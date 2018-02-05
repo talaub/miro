@@ -15,7 +15,7 @@ public class CssExportTest {
     public void testSimple () throws IOException {
         CssStylesheet stylesheet = new CssStylesheet();
         CssBlock block = new CssBlock("div");
-        CssStatement statement = new CssStatement("margin-right", "3em");
+        CssStatement statement = new CssStatement("margin-right", "3em", false);
         block.addStatement(statement);
         stylesheet.addElement(block);
 

@@ -10,7 +10,7 @@ import java.io.PrintWriter;
 public class CLI {
 
     public static void main (String[] args) {
-        String code = "@use '/home/tamino/Schreibtisch/useable.miro'\ndiv\n    color $color-red";
+        String code = "div\n    color red.setRed(128)!";
         //Reader reader = new Reader("/Users/taminolaub/Desktop/test.miro");
         //code = reader.read();
         System.out.println(code);
