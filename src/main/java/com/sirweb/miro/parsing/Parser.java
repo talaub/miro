@@ -138,6 +138,7 @@ public class Parser {
                     else
                         ((com.sirweb.miro.parsing.values.miro.List) parsedValue).addValue(content);
                 }
+                consumeNewlinesAndWhitespaces();
                 consume(TokenType.C_Q_TOKEN);
             }
 
