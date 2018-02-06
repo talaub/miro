@@ -48,6 +48,16 @@ public class ValueFuncTest {
     }
 
     @Test
+    public void colorGetAlpha () throws MiroException {
+        Tokenizer tokenizer = new Tokenizer("$test = rgba(255,255,255,255).getAlpha()");
+        tokenizer.tokenize();
+        Parser parser = new Parser(tokenizer);
+        MiroStylesheet s = parser.parse();
+        assertTrue(s.symbolTable().hasSymbol("test"));
+        assertEquals(1, (int) ((Numeric) s.symbolTable().getSymbol("test")).getValue());
+    }
+
+    @Test
     public void colorSetRed () throws MiroException {
         Tokenizer tokenizer = new Tokenizer("$test = #ff8a20.setRed(0)");
         tokenizer.tokenize();
@@ -78,6 +88,17 @@ public class ValueFuncTest {
         assertTrue(s.symbolTable().hasSymbol("test"));
         MiroValue v = s.symbolTable().getSymbol("test");
         assertEquals(255, (int) ((Color) s.symbolTable().getSymbol("test")).getBlue());
+    }
+
+    @Test
+    public void colorSetAlpha () throws MiroException {
+        Tokenizer tokenizer = new Tokenizer("$test = #ff8a20.setAlpha(0%)");
+        tokenizer.tokenize();
+        Parser parser = new Parser(tokenizer);
+        MiroStylesheet s = parser.parse();
+        assertTrue(s.symbolTable().hasSymbol("test"));
+        MiroValue v = s.symbolTable().getSymbol("test");
+        assertEquals(0, (int) ((Color) s.symbolTable().getSymbol("test")).getAlpha());
     }
 
     @Test

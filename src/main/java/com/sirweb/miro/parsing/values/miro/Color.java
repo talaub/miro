@@ -266,6 +266,10 @@ public class Color implements MiroValue {
                 if (parameters.size() != 0)
                     throw new MiroFuncParameterException(functionName, 0, parameters.size());
                 return new Numeric(blue, Unit.NONE);
+            case "getAlpha":
+                if (parameters.size() != 0)
+                    throw new MiroFuncParameterException(functionName, 0, parameters.size());
+                return new Numeric(alpha / 255.0, Unit.NONE);
             case "setRed":
                 if (parameters.size() != 1)
                     throw new MiroFuncParameterException(functionName, 1, parameters.size());
@@ -305,6 +309,22 @@ public class Color implements MiroValue {
                 else
                     throw new MiroFuncParameterException("setBlue function parameter has to be percent or simple number");
                 return this;
+            case "setAlpha":
+                if (parameters.size() != 1)
+                    throw new MiroFuncParameterException(functionName, 1, parameters.size());
+                MiroValue valueAlpha = parameters.get(0);
+                if (!(valueAlpha instanceof Numeric))
+                    throw new MiroFuncParameterException("setBlue function parameter has to be numeric");
+                if (((Numeric) valueAlpha).getUnit() == Unit.NONE)
+                    if (((Numeric) valueAlpha).getValue() <= 1.0)
+                        alpha = (int) ((Numeric) valueAlpha).getValue() * 255;
+                    else
+                        alpha = (int) ((Numeric) valueAlpha).getValue();
+                else if (((Numeric) valueAlpha).getUnit() == Unit.PERCENT)
+                    alpha = (int) ((((Numeric) valueAlpha).getValue() / 100.0) * 255.0);
+                else
+                    throw new MiroFuncParameterException("setAlpha function parameter has to be percent or simple number");
+                return this;
             default:
                 throw new MiroUnimplementedFuncException(functionName, this.getClass());
 
@@ -321,5 +341,9 @@ public class Color implements MiroValue {
 
     public int getBlue() {
         return blue;
+    }
+
+    public int getAlpha() {
+        return alpha;
     }
 }
