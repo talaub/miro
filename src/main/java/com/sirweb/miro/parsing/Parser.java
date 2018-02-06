@@ -13,6 +13,7 @@ import com.sirweb.miro.exceptions.MiroUnimplementedFuncException;
 import com.sirweb.miro.lexer.Token;
 import com.sirweb.miro.lexer.TokenType;
 import com.sirweb.miro.lexer.Tokenizer;
+import com.sirweb.miro.parsing.values.Unit;
 import com.sirweb.miro.parsing.values.Value;
 import com.sirweb.miro.parsing.values.miro.*;
 import com.sirweb.miro.util.Reader;
@@ -125,6 +126,18 @@ public class Parser {
 
                 parsedValue = new Function(functionName, (MultiValue) parsedParameter);
 
+                if ("rgb".equals(((Function) parsedValue).getName())) {
+                    for (MiroValue val : ((MultiValue) parsedParameter).getValues())
+                        if (!(val instanceof Numeric))
+                            throw new MiroParserException("Cannot create Color from " + val.getClass().getSimpleName());
+                    parsedValue = new Color((Numeric) ((MultiValue) parsedParameter).get(0), (Numeric) ((MultiValue) parsedParameter).get(1), (Numeric) ((MultiValue) parsedParameter).get(2), new Numeric(255, Unit.NONE));
+                }
+                else if ("rgba".equals(((Function) parsedValue).getName())) {
+                    for (MiroValue val : ((MultiValue) parsedParameter).getValues())
+                        if (!(val instanceof Numeric))
+                            throw new MiroParserException("Cannot create Color from " + val.getClass().getSimpleName());
+                    parsedValue = new Color((Numeric) ((MultiValue) parsedParameter).get(0), (Numeric) ((MultiValue) parsedParameter).get(1), (Numeric) ((MultiValue) parsedParameter).get(2), (Numeric) ((MultiValue) parsedParameter).get(3));
+                }
             }
             else if (tokenizer.nextTokenType() == TokenType.O_Q_TOKEN) {
                 parsedValue = new com.sirweb.miro.parsing.values.miro.List();

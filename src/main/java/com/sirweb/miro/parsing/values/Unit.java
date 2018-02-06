@@ -27,7 +27,7 @@ public enum Unit {
             case "%":
                 return Unit.PERCENT;
             default:
-                return Unit.valueOf(s);
+                return Unit.valueOf(s.toUpperCase());
 
         }
     }

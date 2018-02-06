@@ -30,11 +30,30 @@ public class Numeric implements MiroValue {
             tokenString = tokenString.substring(1);
         }
 
-        String unitString = (tokenString + " ").split("(?<=\\D)(?=\\d)|(?<=\\d)(?=\\D)")[1].toUpperCase().trim();
-        double tokenValue = Double.parseDouble(tokenString.split("(?<=\\D)(?=\\d)|(?<=\\d)(?=\\D)")[0]);
+        if (tokenString.charAt(0) == '.')
+            tokenString = '0' + tokenString;
+
+        String valueString = "";
+        String unitString = "";
+
+        boolean atUnit = false;
+        for (int i = 0; i < tokenString.length(); i++) {
+            if (!atUnit) {
+                if ("0123456789.".indexOf(tokenString.charAt(i)) != -1)
+                    valueString += tokenString.charAt(i);
+                else
+                    atUnit = true;
+
+            }
+
+            if (atUnit)
+                unitString += tokenString.charAt(i);
+        }
+
+        double tokenValue = Double.parseDouble(valueString);
 
         this.value = tokenValue * Unit.forString(unitString).getMultiplier() * (negative ? -1 : 1);
-        this.unit = Unit.forString(unitString);
+        this.unit = Unit.forString(unitString.toUpperCase().trim());
 
     }
 

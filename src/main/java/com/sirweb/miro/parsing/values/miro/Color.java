@@ -8,10 +8,54 @@ import com.sirweb.miro.parsing.values.Value;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public class Color implements MiroValue {
     private int red, green, blue, alpha;
+
+    public Color(int r, int g, int b, int a) {
+        red = r;
+        green = g;
+        blue = b;
+        alpha = a;
+    }
+
+    public Color (Numeric r, Numeric g, Numeric b, Numeric a) throws MiroParserException {
+        if (r.getUnit() == Unit.NONE)
+            red = (int) r.getValue();
+        else if (r.getUnit() == Unit.PERCENT)
+            red = (int) ((r.getValue()/100.0) * 255);
+        else
+            throw new MiroParserException("Cannot create red value from " + r.getUnit());
+
+        if (g.getUnit() == Unit.NONE)
+            green = (int) g.getValue();
+        else if (g.getUnit() == Unit.PERCENT)
+            green = (int) ((g.getValue()/100.0) * 255);
+        else
+            throw new MiroParserException("Cannot create green value from " + g.getUnit());
+
+        if (b.getUnit() == Unit.NONE)
+            blue = (int) b.getValue();
+        else if (b.getUnit() == Unit.PERCENT)
+            blue = (int) ((b.getValue()/100.0) * 255);
+        else
+            throw new MiroParserException("Cannot create blue value from " + b.getUnit());
+
+        if (a.getUnit() == Unit.NONE) {
+            if (a.getValue() <= 1.0)
+                alpha = (int) (a.getValue() * 255);
+            else
+                alpha = (int) a.getValue();
+        }
+        else if (a.getUnit() == Unit.PERCENT)
+            alpha = (int) ((a.getValue() / 100.0) * 255);
+        else
+            throw new MiroParserException("Cannot create alpha value from " + a.getUnit());
+    }
+
+    public Color (int r, int g, int b) { this(r,g,b,255); }
 
     public Color (String hex) {
         if (hex.length() == 4)
@@ -202,7 +246,7 @@ public class Color implements MiroValue {
             }
         }
         else
-            return String.format("rgba(%i, %i, %i, %d)", red, green, blue, alpha / 255.0);
+            return String.format(Locale.US,"rgba(%d, %d, %d, %f)", red, green, blue, alpha / 255.0);
 
         return "transparent";
     }

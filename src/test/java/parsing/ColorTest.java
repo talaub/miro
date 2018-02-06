@@ -1,6 +1,7 @@
 package parsing;
 
 import com.sirweb.miro.exceptions.MiroException;
+import com.sirweb.miro.exceptions.MiroParserException;
 import com.sirweb.miro.lexer.Tokenizer;
 import com.sirweb.miro.parsing.Parser;
 import com.sirweb.miro.parsing.values.miro.Calculator;
@@ -34,5 +35,44 @@ public class ColorTest {
         Calculator calculator = new Calculator(parser);
         MiroValue result = calculator.eval();
         assertEquals("red", result.toString());
+    }
+
+    @Test
+    public void rgb () throws MiroException {
+        Tokenizer tokenizer = new Tokenizer("rgb(0, 255, 0)");
+        tokenizer.tokenize();
+        Parser parser = new Parser(tokenizer);
+        Calculator calculator = new Calculator(parser);
+        MiroValue result = calculator.eval();
+        assertEquals("lime", result.toString());
+    }
+
+    @Test
+    public void rgba () throws MiroException {
+        Tokenizer tokenizer = new Tokenizer("rgba(0, 255, 0, 100%)");
+        tokenizer.tokenize();
+        Parser parser = new Parser(tokenizer);
+        Calculator calculator = new Calculator(parser);
+        MiroValue result = calculator.eval();
+        assertEquals("lime", result.toString());
+    }
+
+    @Test(expected = MiroParserException.class)
+    public void rgbaStringFail () throws MiroException {
+        Tokenizer tokenizer = new Tokenizer("rgba(0, 255, '5', 100%)");
+        tokenizer.tokenize();
+        Parser parser = new Parser(tokenizer);
+        Calculator calculator = new Calculator(parser);
+        MiroValue result = calculator.eval();
+    }
+
+    @Test
+    public void rgbaPercent () throws MiroException {
+        Tokenizer tokenizer = new Tokenizer("rgba(100%, 100%, 100%, 1)");
+        tokenizer.tokenize();
+        Parser parser = new Parser(tokenizer);
+        Calculator calculator = new Calculator(parser);
+        MiroValue result = calculator.eval();
+        assertEquals("white", result.toString());
     }
 }
