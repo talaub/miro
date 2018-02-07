@@ -1,9 +1,6 @@
 package com.sirweb.miro.parsing.values.miro;
 
-import com.sirweb.miro.exceptions.MiroCalculationException;
-import com.sirweb.miro.exceptions.MiroFuncParameterException;
-import com.sirweb.miro.exceptions.MiroParserException;
-import com.sirweb.miro.exceptions.MiroUnimplementedFuncException;
+import com.sirweb.miro.exceptions.*;
 import com.sirweb.miro.lexer.Token;
 import com.sirweb.miro.lexer.TokenType;
 import com.sirweb.miro.lexer.Tokenizer;
@@ -70,7 +67,7 @@ public class Calculator implements MiroValue {
     private Parser parser;
     private List<Object> postfix;
 
-    public Calculator (Parser parser) throws MiroParserException {
+    public Calculator (Parser parser) throws MiroException {
         this.parser = parser;
         this.tokenizer = parser.tokenizer();
         this.postfix = new ArrayList<>();
@@ -79,7 +76,7 @@ public class Calculator implements MiroValue {
 
     public List<Object> getPostfix () { return postfix; }
 
-    private void parseCalculation() throws MiroParserException {
+    private void parseCalculation() throws MiroException {
         Stack<Operator> operators = new Stack<>();
         parser.consumeWhitespaces();
 

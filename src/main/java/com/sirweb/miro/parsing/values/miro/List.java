@@ -57,4 +57,11 @@ public class List implements MiroValue {
 
         }
     }
+
+    public com.sirweb.miro.parsing.values.miro.List clone () {
+        com.sirweb.miro.parsing.values.miro.List l = new com.sirweb.miro.parsing.values.miro.List();
+        for (MiroValue v : values)
+            l.addValue(v);
+        return l;
+    }
 }

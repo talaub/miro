@@ -69,13 +69,15 @@ public class Parser {
         return false;
     }
 
-    public MiroValue parseValue () throws MiroParserException, MiroFuncParameterException, MiroUnimplementedFuncException {
+    public MiroValue parseValue () throws MiroException {
         consumeWhitespaces();
 
         if (tokenizer.nextTokenType() == TokenType.C_R_TOKEN)
             return null;
 
         MultiValue multiValue = new MultiValue();
+
+        TokenType delimiter = null;
 
         do {
 
@@ -178,9 +180,40 @@ public class Parser {
 
             multiValue.addValue(parsedValue);
 
-        } while (tokenizer.nextTokenType() == TokenType.COMMA_TOKEN);
+            if (delimiter == null) {
+                consumeWhitespaces();
+                if (tokenizer.nextTokenType() == TokenType.STRING_TOKEN
+                        || tokenizer.nextTokenType() == TokenType.IDENT_TOKEN
+                        || tokenizer.nextTokenType() == TokenType.NUMBER_TOKEN
+                        || tokenizer.nextTokenType() == TokenType.DIMENSION_TOKEN
+                        || tokenizer.nextTokenType() == TokenType.MIRO_IDENT_TOKEN
+                        || tokenizer.nextTokenType() == TokenType.O_C_TOKEN
+                        || tokenizer.nextTokenType() == TokenType.O_R_TOKEN
+                        || tokenizer.nextTokenType() == TokenType.O_Q_TOKEN
+                        || tokenizer.nextTokenType() == TokenType.URL_TOKEN
+                        || tokenizer.nextTokenType() == TokenType.PERCENTAGE_TOKEN
+                        || tokenizer.nextTokenType() == TokenType.FUNCTION_TOKEN) {
+                    delimiter = TokenType.WHITESPACE_TOKEN;
+                    tokenizer.pushBack();
+                } else
+                    delimiter = TokenType.COMMA_TOKEN;
+            }
 
-        return multiValue.size() > 1 ? multiValue : multiValue.get(0);
+            if (delimiter == TokenType.COMMA_TOKEN)
+                consumeWhitespaces();
+
+
+        } while (tokenizer.nextTokenType() == delimiter);
+
+        if (delimiter == TokenType.WHITESPACE_TOKEN) {
+            com.sirweb.miro.parsing.values.miro.List res = new com.sirweb.miro.parsing.values.miro.List();
+
+            for (MiroValue v : multiValue.getValues())
+                res.addValue(v);
+            return res;
+        }
+        else
+            return multiValue.size() > 1 ? multiValue : multiValue.get(0);
     }
 
     public MiroStylesheet parse () throws MiroException {
@@ -196,7 +229,7 @@ public class Parser {
         parseBlockContent();
     }
 
-    private void parseScript () throws MiroParserException {
+    private void parseScript () throws MiroException {
         if (tokenizer.nextTokenType() == TokenType.MIRO_IDENT_TOKEN)
             parseScriptAssignment();
         optional(TokenType.SEMICOLON_TOKEN);
@@ -212,7 +245,7 @@ public class Parser {
         return null;
     }
 
-    private void parseScriptAssignment () throws MiroParserException {
+    private void parseScriptAssignment () throws MiroException {
         String assignIdent = consume(TokenType.MIRO_IDENT_TOKEN).substring(1);
         consumeWhitespaces();
 
@@ -284,7 +317,7 @@ public class Parser {
         }
     }
 
-    private void parseCssStatement (String prependProperty) throws MiroParserException {
+    private void parseCssStatement (String prependProperty) throws MiroException {
         String property = consume(TokenType.IDENT_TOKEN);
         consumeWhitespaces();
         optional(TokenType.COLON_TOKEN);
@@ -313,7 +346,7 @@ public class Parser {
 
     }
 
-    private void parseNestProp () throws MiroParserException {
+    private void parseNestProp () throws MiroException {
         String nest = consume(TokenType.MIRO_NESTPROP_TOKEN);
         consumeNewlines();
         consume(TokenType.MIRO_INDENT_TOKEN);

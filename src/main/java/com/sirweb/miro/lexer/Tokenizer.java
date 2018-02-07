@@ -256,7 +256,14 @@ public class Tokenizer {
         return tokenizer.nextTokenType();
     }
 
+    public TokenType getXNextTokenType (int x) {
+        int pos = position + x;
+        return pos < tokenstream.size() ? tokenstream.get(pos).getType() : TokenType.EOF;
+    }
+
     public Tokenizer clone () {
         return new Tokenizer(tokenstream.subList(position, tokenstream.size()));
     }
+
+    public void pushBack () { position--; }
 }

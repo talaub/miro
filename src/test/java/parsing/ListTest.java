@@ -6,6 +6,7 @@ import com.sirweb.miro.lexer.Tokenizer;
 import com.sirweb.miro.parsing.Parser;
 import com.sirweb.miro.parsing.values.miro.List;
 import com.sirweb.miro.parsing.values.miro.MiroValue;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -57,5 +58,38 @@ public class ListTest {
 
         assertEquals(2, i);
 
+    }
+
+    @Test
+    public void autoList () throws MiroException {
+        Tokenizer tokenizer = new Tokenizer("$test = 5px 10px 20px 40px");
+        tokenizer.tokenize();
+        Parser parser = new Parser(tokenizer);
+        MiroStylesheet stylesheet = parser.parse();
+
+        assertTrue(stylesheet.symbolTable().hasSymbol("test"));
+
+        int i = 0;
+        for (MiroValue value : ((List) stylesheet.symbolTable().getSymbol("test")).getValues())
+            i++;
+
+        assertEquals(4, i);
+
+    }
+
+    @Test
+    public void nestedList () throws MiroException {
+        Tokenizer tokenizer = new Tokenizer("$test = 5px 10px ['foo', [5%, 10%], bar] 40px");
+        tokenizer.tokenize();
+        Parser parser = new Parser(tokenizer);
+        MiroStylesheet stylesheet = parser.parse();
+
+        assertTrue(stylesheet.symbolTable().hasSymbol("test"));
+
+        int i = 0;
+        for (MiroValue value : ((List) stylesheet.symbolTable().getSymbol("test")).getValues())
+            i++;
+
+        assertEquals(4, i);
     }
 }
