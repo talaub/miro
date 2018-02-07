@@ -379,6 +379,7 @@ public class Parser {
                 break;
             default:
                 parseUnknownAtRule();
+                break;
 
 
         }

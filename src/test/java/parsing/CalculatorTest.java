@@ -167,4 +167,14 @@ public class CalculatorTest {
         assertEquals("TestTestTest", ((StringValue) result).getValue());
     }
 
+    @Test
+    public void addPercent () throws MiroException {
+        Tokenizer tokenizer = new Tokenizer("50% + 100px");
+        tokenizer.tokenize();
+        Parser parser = new Parser(tokenizer);
+        Calculator calculator = new Calculator(parser);
+        MiroValue result = calculator.eval();
+        assertEquals("calc(50% + 100px)", result.toString());
+    }
+
 }

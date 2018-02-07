@@ -15,6 +15,8 @@ public class Ident implements MiroValue {
         this.value = token.getToken();
     }
 
+    public Ident (String ident) { value = ident; }
+
     public String getValue () { return value; }
 
     public String toString () { return getValue(); }

@@ -5,6 +5,7 @@ import com.sirweb.miro.lexer.Token;
 import com.sirweb.miro.lexer.TokenType;
 import com.sirweb.miro.lexer.Tokenizer;
 import com.sirweb.miro.parsing.Parser;
+import com.sirweb.miro.parsing.values.Unit;
 import com.sirweb.miro.parsing.values.Value;
 
 import java.util.ArrayList;
@@ -160,7 +161,22 @@ public class Calculator implements MiroValue {
 
     private MiroValue addNumeric (Numeric val1, MiroValue val2) {
         if (val2 instanceof Numeric)
-            return new Numeric(val1.getNormalizedValue() + ((Numeric)val2).getNormalizedValue(), val1.getUnit());
+            if (val1.getUnit() == Unit.PERCENT
+                    || val1.getUnit() == Unit.VW
+                    || val1.getUnit() == Unit.VH
+                    || ((Numeric) val2).getUnit() == Unit.PERCENT
+                    || ((Numeric) val2).getUnit() == Unit.VW
+                    || ((Numeric) val2).getUnit() == Unit.VH) {
+                MultiValue parameters = new MultiValue();
+                com.sirweb.miro.parsing.values.miro.List calculation = new com.sirweb.miro.parsing.values.miro.List();
+                calculation.addValue(val1);
+                calculation.addValue(new Ident("+"));
+                calculation.addValue(val2);
+                parameters.addValue(calculation);
+                return new Function("calc", parameters);
+            }
+            else
+                return new Numeric(val1.getNormalizedValue() + ((Numeric)val2).getNormalizedValue(), val1.getUnit());
         if (val2 instanceof StringValue)
             return new StringValue(val1.toString() + ((StringValue) val2).getValue());
 
