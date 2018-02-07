@@ -6,10 +6,7 @@ import com.sirweb.miro.ast.miro.MiroBlock;
 import com.sirweb.miro.ast.miro.MiroMediaQuery;
 import com.sirweb.miro.ast.miro.MiroStatement;
 import com.sirweb.miro.ast.miro.MiroStylesheet;
-import com.sirweb.miro.exceptions.MiroException;
-import com.sirweb.miro.exceptions.MiroFuncParameterException;
-import com.sirweb.miro.exceptions.MiroParserException;
-import com.sirweb.miro.exceptions.MiroUnimplementedFuncException;
+import com.sirweb.miro.exceptions.*;
 import com.sirweb.miro.lexer.Token;
 import com.sirweb.miro.lexer.TokenType;
 import com.sirweb.miro.lexer.Tokenizer;
@@ -380,6 +377,10 @@ public class Parser {
             case "use":
                 parseUse();
                 break;
+            default:
+                parseUnknownAtRule();
+
+
         }
     }
 
@@ -562,6 +563,36 @@ public class Parser {
             stack.peek().symbolTable().setSymbol(symbol, st.getSymbol(symbol));
 
         optional(TokenType.SEMICOLON_TOKEN);
+
+    }
+
+    private void parseUnknownAtRule () throws MiroException {
+        if (tokenizer.lineOpensBlock())
+            parseUnknownAtBlock();
+    }
+
+    private void parseUnknownAtBlock () throws MiroException {
+        String header = "";
+        tokenizer.pushBack();
+        do
+            header += consume(tokenizer.nextTokenType());
+        while (tokenizer.nextTokenType() != TokenType.NEWLINE_TOKEN);
+
+        consume(TokenType.NEWLINE_TOKEN);
+        consume(TokenType.MIRO_INDENT_TOKEN);
+
+        MiroBlock block = new MiroBlock(header);
+
+        stack.peek().addBlock(block);
+        stack.push(block);
+
+        parseBlockContent();
+
+        if (tokenizer.nextTokenType() == TokenType.MIRO_DEDENT_TOKEN)
+            consume(TokenType.MIRO_DEDENT_TOKEN);
+        else
+            consume(TokenType.EOF);
+        stack.pop();
 
     }
 }
