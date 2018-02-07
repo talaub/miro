@@ -82,4 +82,9 @@ public class Numeric implements MiroValue {
     public Value callFunc(String functionName, List<MiroValue> parameters) throws MiroParserException {
         return null;
     }
+
+    @Override
+    public boolean getBoolean() {
+        return getNormalizedValue() != 0.0;
+    }
 }

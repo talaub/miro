@@ -25,4 +25,9 @@ public class Ident implements MiroValue {
     public Value callFunc(String functionName, List<MiroValue> parameters) throws MiroUnimplementedFuncException, MiroFuncParameterException {
         return null;
     }
+
+    @Override
+    public boolean getBoolean() {
+        return true;
+    }
 }

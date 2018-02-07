@@ -19,4 +19,9 @@ public class Bool implements MiroValue {
     public String toString () {
         return value ? "TRUE" : "FALSE";
     }
+
+    @Override
+    public boolean getBoolean() {
+        return value;
+    }
 }

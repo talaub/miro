@@ -177,4 +177,44 @@ public class CalculatorTest {
         assertEquals("calc(50% + 100px)", result.toString());
     }
 
+    @Test
+    public void andFalse () throws MiroException {
+        Tokenizer tokenizer = new Tokenizer("50 && []");
+        tokenizer.tokenize();
+        Parser parser = new Parser(tokenizer);
+        Calculator calculator = new Calculator(parser);
+        MiroValue result = calculator.eval();
+        assertEquals("FALSE", result.toString());
+    }
+
+    @Test
+    public void andTrue () throws MiroException {
+        Tokenizer tokenizer = new Tokenizer("50 && 'T'");
+        tokenizer.tokenize();
+        Parser parser = new Parser(tokenizer);
+        Calculator calculator = new Calculator(parser);
+        MiroValue result = calculator.eval();
+        assertEquals("TRUE", result.toString());
+    }
+
+    @Test
+    public void orFalse () throws MiroException {
+        Tokenizer tokenizer = new Tokenizer("'' || []");
+        tokenizer.tokenize();
+        Parser parser = new Parser(tokenizer);
+        Calculator calculator = new Calculator(parser);
+        MiroValue result = calculator.eval();
+        assertEquals("FALSE", result.toString());
+    }
+
+    @Test
+    public void orTrue () throws MiroException {
+        Tokenizer tokenizer = new Tokenizer("0 || test");
+        tokenizer.tokenize();
+        Parser parser = new Parser(tokenizer);
+        Calculator calculator = new Calculator(parser);
+        MiroValue result = calculator.eval();
+        assertEquals("TRUE", result.toString());
+    }
+
 }

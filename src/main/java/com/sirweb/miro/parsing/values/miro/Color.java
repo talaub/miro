@@ -346,4 +346,9 @@ public class Color implements MiroValue {
     public int getAlpha() {
         return alpha;
     }
+
+    @Override
+    public boolean getBoolean() {
+        return !(alpha == 0 || (red == 0 && green == 0 && blue == 0));
+    }
 }

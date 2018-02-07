@@ -53,4 +53,9 @@ public class StringValue implements MiroValue {
 
         }
     }
+
+    @Override
+    public boolean getBoolean() {
+        return value.length() > 0;
+    }
 }

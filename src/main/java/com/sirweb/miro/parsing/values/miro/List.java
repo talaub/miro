@@ -64,4 +64,9 @@ public class List implements MiroValue {
             l.addValue(v);
         return l;
     }
+
+    @Override
+    public boolean getBoolean() {
+        return values.size() > 0;
+    }
 }

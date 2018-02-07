@@ -133,6 +133,13 @@ public class Calculator implements MiroValue {
                         break;
                     case MULTIPLY:
                         result = multiply(val1, val2);
+                        break;
+                    case OR:
+                        result = Or(val1, val2);
+                        break;
+                    case AND:
+                        result = And(val1, val2);
+                        break;
                 }
                 operands.push(result);
             }
@@ -203,5 +210,18 @@ public class Calculator implements MiroValue {
         }
 
         return null;
+    }
+
+    private Bool Or (MiroValue val1, MiroValue val2) {
+        return new Bool(val1.getBoolean() || val2.getBoolean());
+    }
+
+    private Bool And (MiroValue val1, MiroValue val2) {
+        return new Bool(val1.getBoolean() && val2.getBoolean());
+    }
+
+    @Override
+    public boolean getBoolean() {
+        return eval().getBoolean();
     }
 }

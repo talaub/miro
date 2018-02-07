@@ -7,4 +7,6 @@ import com.sirweb.miro.parsing.values.miro.MiroValue;
 import java.util.List;
 
 public interface Value {
+
+    boolean getBoolean ();
 }

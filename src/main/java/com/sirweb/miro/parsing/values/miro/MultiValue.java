@@ -38,4 +38,9 @@ public class MultiValue implements MiroValue {
     public Value callFunc(String functionName, List<MiroValue> parameters) throws MiroUnimplementedFuncException, MiroFuncParameterException {
         return null;
     }
+
+    @Override
+    public boolean getBoolean() {
+        return values.size() > 0;
+    }
 }
