@@ -1,11 +1,10 @@
 package com.sirweb.miro.parsing;
 
+import com.sirweb.miro.ast.Block;
 import com.sirweb.miro.ast.Element;
+import com.sirweb.miro.ast.Statement;
 import com.sirweb.miro.ast.css.CssStylesheet;
-import com.sirweb.miro.ast.miro.MiroBlock;
-import com.sirweb.miro.ast.miro.MiroMediaQuery;
-import com.sirweb.miro.ast.miro.MiroStatement;
-import com.sirweb.miro.ast.miro.MiroStylesheet;
+import com.sirweb.miro.ast.miro.*;
 import com.sirweb.miro.exceptions.*;
 import com.sirweb.miro.lexer.Token;
 import com.sirweb.miro.lexer.TokenType;
@@ -24,9 +23,30 @@ public class Parser {
     private Tokenizer tokenizer;
     private MiroStylesheet root;
     private Stack<Element> stack;
+    private SymbolTable globals;
 
     public Parser (Tokenizer tokenizer) {
         this.tokenizer = tokenizer;
+        this.globals = new SymbolTable();
+    }
+
+    public void setGlobal (String name, MiroValue value) {
+        globals.setSymbol(name, value);
+    }
+
+    public SymbolTable getFullSymbolTable () {
+        SymbolTable sm = new SymbolTable();
+
+        Stack<Element> tmpStack = (Stack<Element>) stack.clone();
+        while (!tmpStack.empty()) {
+            Element element = tmpStack.pop();
+
+            for (String key : element.symbolTable().getSymbols()) {
+                if (!sm.hasSymbol(key))
+                    sm.setSymbol(key, element.symbolTable().getSymbol(key));
+            }
+        }
+        return sm;
     }
 
     public Tokenizer tokenizer() {
@@ -67,6 +87,10 @@ public class Parser {
     }
 
     public MiroValue parseValue () throws MiroException {
+        return parseValue(false);
+    }
+
+    public MiroValue parseValue (boolean quitAtComma) throws MiroException {
         consumeWhitespaces();
 
         if (tokenizer.nextTokenType() == TokenType.C_R_TOKEN)
@@ -153,6 +177,24 @@ public class Parser {
                 consumeNewlinesAndWhitespaces();
                 consume(TokenType.C_Q_TOKEN);
             }
+            else if (tokenizer.nextTokenType() == TokenType.O_C_TOKEN) {
+                parsedValue = new Dictionary();
+
+                consume(TokenType.O_C_TOKEN);
+                while (tokenizer.nextTokenType() != TokenType.C_C_TOKEN) {
+                    consumeNewlinesAndWhitespaces();
+                    String key = consume(TokenType.IDENT_TOKEN);
+                    consumeNewlinesAndWhitespaces();
+                    consume(TokenType.COLON_TOKEN);
+                    consumeNewlinesAndWhitespaces();
+                    MiroValue value = parseValue(true);
+                    consumeNewlinesAndWhitespaces();
+                    optional(TokenType.COMMA_TOKEN);
+                    consumeNewlinesAndWhitespaces();
+                    ((Dictionary) parsedValue).setValue(key, value);
+                }
+                consume(TokenType.C_C_TOKEN);
+            }
 
             if (parsedValue == null)
                 throw new MiroParserException("Could not parse value from token '" + tokenizer.getNext().getToken() + "'");
@@ -199,6 +241,9 @@ public class Parser {
             if (delimiter == TokenType.COMMA_TOKEN)
                 consumeWhitespaces();
 
+            if (quitAtComma && tokenizer.nextTokenType() == TokenType.COMMA_TOKEN)
+                return parsedValue;
+
 
         } while (tokenizer.nextTokenType() == delimiter);
 
@@ -221,6 +266,8 @@ public class Parser {
 
     private void parseStylesheet () throws MiroException {
         root = new MiroStylesheet();
+        for (String key : globals.getSymbols())
+            root.symbolTable().setSymbol(key, globals.getSymbol(key));
         stack.push(root);
 
         parseBlockContent();
@@ -242,6 +289,16 @@ public class Parser {
         return null;
     }
 
+    private MiroMixin findMixin (String mixinName) {
+        Stack<Element> tmpStack = (Stack<Element>) stack.clone();
+        while (!tmpStack.empty()) {
+            if (tmpStack.peek().symbolTable().hasMixin(mixinName))
+                return tmpStack.peek().symbolTable().getMixin(mixinName);
+            tmpStack.pop();
+        }
+        return null;
+    }
+
     private void parseScriptAssignment () throws MiroException {
         String assignIdent = consume(TokenType.MIRO_IDENT_TOKEN).substring(1);
         consumeWhitespaces();
@@ -256,7 +313,12 @@ public class Parser {
     }
 
     private void parseCss () throws MiroException {
-        if (tokenizer.nextTokenType() == TokenType.AT_KEYWORD_TOKEN)
+        if (tokenizer.nextTokenType() == TokenType.MIRO_MIXIN_TOKEN) {
+            if (tokenizer.lineOpensBlock())
+                parseMixinDeclaration();
+            else
+                parseMixinCall();
+        } else if (tokenizer.nextTokenType() == TokenType.AT_KEYWORD_TOKEN)
             parseAtExpression();
         else if (tokenizer.lineOpensBlock()) {
             if (tokenizer.nextTokenType() == TokenType.MIRO_NESTPROP_TOKEN)
@@ -594,6 +656,135 @@ public class Parser {
         else
             consume(TokenType.EOF);
         stack.pop();
+
+    }
+
+    private void parseMixinDeclaration () throws  MiroException {
+        String declarationString = consume(TokenType.MIRO_MIXIN_TOKEN);
+        String mixinName = declarationString.substring(1, declarationString.length() - 1);
+        MiroMixin mixin = new MiroMixin(mixinName);
+        consumeWhitespaces();
+
+        boolean startDefaultValues = false;
+        while (tokenizer.nextTokenType() != TokenType.C_R_TOKEN) {
+            consumeWhitespaces();
+            MiroMixinParameter parameter = parseMixinDeclarationParameter();
+
+            if (startDefaultValues && parameter.getDefaultValue() == null)
+                throw new MiroMixinException("Seperate parameters with and without default values");
+
+            if (parameter.getDefaultValue() != null)
+                startDefaultValues = true;
+            mixin.addParameter(parameter);
+            consumeWhitespaces();
+            optional(TokenType.COMMA_TOKEN);
+            consumeWhitespaces();
+        }
+        consume(TokenType.C_R_TOKEN);
+        consume(TokenType.NEWLINE_TOKEN);
+        consume(TokenType.MIRO_INDENT_TOKEN);
+
+        int indents = 0;
+        do {
+            if (tokenizer.nextTokenType() == TokenType.MIRO_INDENT_TOKEN)
+                indents++;
+            else if (tokenizer.nextTokenType() == TokenType.MIRO_DEDENT_TOKEN)
+                indents--;
+            mixin.addContent(tokenizer.getNext());
+        } while (!(indents == 0 && tokenizer.nextTokenType() == TokenType.MIRO_DEDENT_TOKEN) && !(tokenizer.nextTokenType() == TokenType.EOF));
+
+        if (tokenizer.nextTokenType() != TokenType.EOF)
+            consume(TokenType.MIRO_DEDENT_TOKEN);
+
+        stack.peek().symbolTable().addMixin(mixin);
+    }
+
+    private MiroMixinParameter parseMixinDeclarationParameter () throws MiroException {
+        consumeWhitespaces();
+        String name = consume(TokenType.IDENT_TOKEN);
+        MiroValue defaultValue = null;
+        consumeWhitespaces();
+
+        if (tokenizer.nextTokenType() == TokenType.EQUAL_TOKEN) {
+            consume(TokenType.EQUAL_TOKEN);
+            consumeWhitespaces();
+            defaultValue = parseValue(true);
+            consumeWhitespaces();
+        }
+
+        return new MiroMixinParameter(name, defaultValue);
+    }
+
+    private void parseMixinCall () throws MiroException {
+        String callString = consume(TokenType.MIRO_MIXIN_TOKEN);
+        String mixinName = callString.substring(1, callString.length() - 1);
+
+        MiroValue parameterValue = parseValue();
+        consume(TokenType.C_R_TOKEN);
+
+        MiroMixin mixin = findMixin(mixinName);
+
+        if (mixin == null)
+            throw new MiroParserException("Unknown mixin with name '"+mixinName+"'");
+
+        int parameterCount;
+
+        if (parameterValue instanceof MultiValue)
+            parameterCount = ((MultiValue) parameterValue).size();
+        else if (parameterValue == null)
+            parameterCount = 0;
+        else
+            parameterCount = 1;
+
+        List<MiroMixinParameter> neededParameters = new ArrayList<>();
+
+        for (MiroMixinParameter param : mixin.getParameters())
+            if (param.getDefaultValue() == null)
+                neededParameters.add(param);
+
+        if (parameterCount < neededParameters.size())
+            throw new MiroMixinException("Mixin " + mixinName + " takes " + mixin.getParameterCount() + " parameters but " + parameterCount + " were passed");
+
+        List<MiroValue> parameterValueList = new ArrayList<>();
+
+
+        int i = 0;
+        if (parameterCount == 1) {
+            parameterValueList.add(parameterValue);
+            i++;
+        }
+        else if (parameterCount > 1) {
+
+            for (MiroValue v : ((MultiValue) parameterValue).getValues()) {
+                parameterValueList.add(v);
+                i++;
+            }
+        }
+        for (; i < mixin.getParameterCount(); i++)
+            parameterValueList.add(mixin.getParameter(i).getDefaultValue());
+
+        Tokenizer mixinTokenizer = new Tokenizer(mixin.getContent());
+        Parser mixinParser = new Parser(mixinTokenizer);
+
+        SymbolTable fullSymbols = getFullSymbolTable();
+
+        for (String key : fullSymbols.getSymbols())
+            mixinParser.setGlobal(key, fullSymbols.getSymbol(key));
+
+        int paramIndex = 0;
+        for (MiroMixinParameter param : mixin.getParameters()) {
+            mixinParser.setGlobal(param.getName(), parameterValueList.get(paramIndex));
+            paramIndex++;
+        }
+
+        MiroStylesheet mixinStylesheet = mixinParser.parse();
+
+        for (Statement statement : mixinStylesheet.getStatements())
+            stack.peek().addStatement(statement);
+
+
+        for (Block block : mixinStylesheet.getBlocks())
+            stack.peek().addBlock(block);
 
     }
 }

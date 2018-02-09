@@ -189,4 +189,26 @@ public class ValueFuncTest {
         parser.parse();
     }
 
+    @Test
+    public void dictIsEmpty () throws MiroException {
+        Tokenizer tokenizer = new Tokenizer("$empty = {}.isEmpty(); $not-empty = {key: value}.isEmpty()");
+        tokenizer.tokenize();
+        Parser parser = new Parser(tokenizer);
+        MiroStylesheet s = parser.parse();
+        assertTrue(s.symbolTable().hasSymbol("empty"));
+        assertTrue(s.symbolTable().hasSymbol("not-empty"));
+        assertEquals("TRUE", s.symbolTable().getSymbol("empty").toString());
+        assertEquals("FALSE", s.symbolTable().getSymbol("not-empty").toString());
+    }
+
+    @Test
+    public void dictLength () throws MiroException {
+        Tokenizer tokenizer = new Tokenizer("$length = {key1: value1, key2: value2}.length()");
+        tokenizer.tokenize();
+        Parser parser = new Parser(tokenizer);
+        MiroStylesheet s = parser.parse();
+        assertTrue(s.symbolTable().hasSymbol("length"));
+        assertEquals(2, (int) ((Numeric)s.symbolTable().getSymbol("length")).getValue());
+    }
+
 }

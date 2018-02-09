@@ -34,7 +34,7 @@ public class Tokenizer {
     private String number = "((\\+|\\-)?((([0-9]*(\\.)([0-9]+))|([0-9]+))((e|E)(\\+|\\-)?[0-9]+)?))";
     private String newline = "(\\n|\\r\\n|\\r|\\f)";
 
-    private Tokenizer (List<Token> tokenstream) {
+    public Tokenizer (List<Token> tokenstream) {
         this.tokenstream = tokenstream;
         this.str = "";
     }
