@@ -106,7 +106,9 @@ public class Calculator implements MiroValue {
         while (!operators.isEmpty())
             postfix.add(operators.pop());
 
-        parser.consumeNewlinesAndWhitespaces();
+        parser.consumeNewlines();
+        parser.consumeWhitespaces();
+        parser.consumeNewlines();
 
         //parser.optional(TokenType.C_R_TOKEN);
 

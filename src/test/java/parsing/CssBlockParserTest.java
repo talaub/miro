@@ -31,6 +31,22 @@ public class CssBlockParserTest {
     }
 
     @Test
+    public void parseBlockWithDedent () throws MiroException {
+        Tokenizer tokenizer = new Tokenizer("div\n    color red\n    &.green\n        color green\n    &.blue\n        color blue");
+        tokenizer.tokenize();
+        Parser parser = new Parser(tokenizer);
+        MiroStylesheet stylesheet = parser.parse();
+        Iterable<Block> elements = stylesheet.getBlocks();
+        for (Block element : elements) {
+            assertEquals("div", ((MiroBlock) element).getHeader());
+            int i = 0;
+            for (Block block : element.getBlocks())
+                i++;
+            assertEquals(2, i);
+        }
+    }
+
+    @Test
     public void testParseVariableStatement () throws MiroException {
         Tokenizer tokenizer = new Tokenizer("div.code\n    $m=4px\n    margin-left $m");
         tokenizer.tokenize();

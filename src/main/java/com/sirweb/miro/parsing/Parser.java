@@ -24,6 +24,7 @@ public class Parser {
     private MiroStylesheet root;
     private Stack<Element> stack;
     private SymbolTable globals;
+    private boolean inCollection = false;
 
     public Parser (Tokenizer tokenizer) {
         this.tokenizer = tokenizer;
@@ -101,6 +102,9 @@ public class Parser {
         TokenType delimiter = null;
 
         do {
+            consumeWhitespaces();consumeNewlines();
+            if (!inCollection && tokenizer.nextTokenType() == TokenType.MIRO_DEDENT_TOKEN)
+                break;
 
             consumeNewlinesAndWhitespaces();
             optional(TokenType.COMMA_TOKEN);
@@ -164,6 +168,7 @@ public class Parser {
             }
             else if (tokenizer.nextTokenType() == TokenType.O_Q_TOKEN) {
                 parsedValue = new com.sirweb.miro.parsing.values.miro.List();
+                inCollection = true;
                 consume(TokenType.O_Q_TOKEN);
                 consumeNewlinesAndWhitespaces();
                 if (tokenizer.nextTokenType() != TokenType.C_Q_TOKEN) {
@@ -176,11 +181,13 @@ public class Parser {
                 }
                 consumeNewlinesAndWhitespaces();
                 consume(TokenType.C_Q_TOKEN);
+                inCollection = false;
             }
             else if (tokenizer.nextTokenType() == TokenType.O_C_TOKEN) {
                 parsedValue = new Dictionary();
 
                 consume(TokenType.O_C_TOKEN);
+                inCollection = true;
                 while (tokenizer.nextTokenType() != TokenType.C_C_TOKEN) {
                     consumeNewlinesAndWhitespaces();
                     String key = consume(TokenType.IDENT_TOKEN);
@@ -194,6 +201,7 @@ public class Parser {
                     ((Dictionary) parsedValue).setValue(key, value);
                 }
                 consume(TokenType.C_C_TOKEN);
+                inCollection = false;
             }
 
             if (parsedValue == null)

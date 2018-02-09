@@ -28,4 +28,24 @@ public class AtTest {
             assertEquals(1, i);
         }
     }
+
+    @Test
+    public void keyframes () throws MiroException {
+        Tokenizer tokenizer = new Tokenizer("@keyframes spin\n    0%\n        transform rotate(0deg)\n    100%\n        transform rotate(360deg)");
+        tokenizer.tokenize();
+        Parser parser = new Parser(tokenizer);
+        MiroStylesheet stylesheet = parser.parse();
+        for (Block block : stylesheet.getBlocks()) {
+            assertEquals("@keyframes spin", block.getHeader());
+            int i = 0;
+            for (Statement s : block.getStatements())
+                i++;
+            assertEquals(0, i);
+
+            int blocks = 0;
+            for (Block b : block.getBlocks())
+                blocks++;
+            assertEquals(2, blocks);
+        }
+    }
 }
