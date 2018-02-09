@@ -211,4 +211,17 @@ public class ValueFuncTest {
         assertEquals(2, (int) ((Numeric)s.symbolTable().getSymbol("length")).getValue());
     }
 
+    @Test
+    public void dictAllValues () throws MiroException {
+        Tokenizer tokenizer = new Tokenizer("$all = {key1: value1, key2: value2}.getAll();$keys = $all.length();$one = $all.get(0).length()");
+        tokenizer.tokenize();
+        Parser parser = new Parser(tokenizer);
+        MiroStylesheet s = parser.parse();
+        assertTrue(s.symbolTable().hasSymbol("all"));
+        assertTrue(s.symbolTable().hasSymbol("keys"));
+        assertTrue(s.symbolTable().hasSymbol("one"));
+        assertEquals(2, (int) ((Numeric)s.symbolTable().getSymbol("keys")).getValue());
+        assertEquals(2, (int) ((Numeric)s.symbolTable().getSymbol("one")).getValue());
+    }
+
 }

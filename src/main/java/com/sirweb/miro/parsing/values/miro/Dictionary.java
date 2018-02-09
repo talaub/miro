@@ -43,6 +43,17 @@ public class Dictionary implements MiroValue {
                 if (parameters.size() != 0)
                     throw new MiroFuncParameterException(functionName, 0, parameters.size());
                 return new Numeric(values.keySet().size(), Unit.NONE);
+            case "getAll":
+                if (parameters.size() != 0)
+                    throw new MiroFuncParameterException(functionName, 0, parameters.size());
+                com.sirweb.miro.parsing.values.miro.List list = new com.sirweb.miro.parsing.values.miro.List();
+                for (String key : values.keySet()) {
+                    com.sirweb.miro.parsing.values.miro.List inner = new com.sirweb.miro.parsing.values.miro.List();
+                    inner.addValue(new Ident(key));
+                    inner.addValue(values.get(key));
+                    list.addValue(inner);
+                }
+                return list;
             default:
                 throw new MiroUnimplementedFuncException(functionName, this.getClass());
 
