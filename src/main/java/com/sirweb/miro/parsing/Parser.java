@@ -349,7 +349,7 @@ public class Parser {
 
         stack.peek().addBlock(block);
         stack.push(block);
-
+        consumeWhitespaces();
         consumeNewlines();
         consume(TokenType.MIRO_INDENT_TOKEN);
         parseBlockContent();

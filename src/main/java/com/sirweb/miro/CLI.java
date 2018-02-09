@@ -10,7 +10,7 @@ import java.io.PrintWriter;
 public class CLI {
 
     public static void main (String[] args) {
-        String code = "$pad = 3px [5px, 10px, 20px, 40px] 10px\ndiv\n    padding $pad.get(1)";
+        String code = "$circle(radius = 5px)\n    width $radius\n    height $radius\n    border-radius 50%\n\ndiv\n    transition: all .2s ease-in-out;background-color #f00.setAlpha(50%)\n    $circle()";
         //Reader reader = new Reader("/Users/taminolaub/Desktop/test.miro");
         //code = reader.read();
         System.out.println(code);

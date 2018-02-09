@@ -48,7 +48,7 @@ public class Tokenizer {
         //tokenDatas.add(new TokenData(Pattern.compile("^()"), TokenType.));
 
 
-        tokenDatas.add(new TokenData(Pattern.compile("^((/\\*(.|"+newline+")*\\*/)|(//.*))"), TokenType.COMMENT_TOKEN));
+        tokenDatas.add(new TokenData(Pattern.compile("^((/\\*(.|"+newline+")*\\*/)|(//(.*)"+newline+"))"), TokenType.COMMENT_TOKEN));
 
         tokenDatas.add(new TokenData(Pattern.compile("^(url\\(("+whitespace+")*"+string+"("+whitespace+")*\\))"), TokenType.URL_TOKEN));
 
