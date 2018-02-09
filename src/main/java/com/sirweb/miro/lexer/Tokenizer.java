@@ -186,6 +186,13 @@ public class Tokenizer {
 
                     String token = matcher.group();
 
+                    if (data.getType() == TokenType.COMMENT_TOKEN) {
+                        str = matcher.replaceFirst("");
+                        beforeTokenCount++;
+                        break;
+                    }
+
+
                     // String tokens have to be retokenized because they can be too large
                     if (data.getType() == TokenType.STRING_TOKEN) {
                         // Get what sign will end the string ('/")

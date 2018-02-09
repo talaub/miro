@@ -72,4 +72,17 @@ public class TokenizerTest {
         assertEquals("'Test1'", first.getToken());
         assertEquals("'Test2'", second.getToken());
     }
+
+    @Test
+    public void testMultilinecomment () throws MiroException {
+        Tokenizer tokenizer = new Tokenizer("before/* This\nis\na\nmultiline\n   comment :)*/after");
+        tokenizer.tokenize();
+
+        Token first = tokenizer.getNext();
+        Token second = tokenizer.getNext();
+        assertEquals(TokenType.IDENT_TOKEN, first.getType());
+        assertEquals(TokenType.IDENT_TOKEN, second.getType());
+        assertEquals("before", first.getToken());
+        assertEquals("after", second.getToken());
+    }
 }
