@@ -35,6 +35,10 @@ public class Parser {
         globals.setSymbol(name, value);
     }
 
+    public void setGlobal (MiroMixin mixin) {
+        globals.addMixin(mixin);
+    }
+
     public SymbolTable getFullSymbolTable () {
         SymbolTable sm = new SymbolTable();
 
@@ -293,8 +297,8 @@ public class Parser {
 
     private void parseStylesheet () throws MiroException {
         root = new MiroStylesheet();
-        for (String key : globals.getSymbols())
-            root.symbolTable().setSymbol(key, globals.getSymbol(key));
+        //for (String key : globals.getSymbols())
+         //   root.symbolTable().setSymbol(key, globals.getSymbol(key));
         stack.push(root);
 
         parseBlockContent();
@@ -308,6 +312,8 @@ public class Parser {
         else if (tokenizer.nextTokenType() == TokenType.IDENT_TOKEN) {
             if ("if".equals(tokenizer.nextTokenString()))
                 parseScriptIf();
+            else if ("for".equals(tokenizer.nextTokenString()))
+                parseScriptFor();
         }
     }
 
@@ -318,6 +324,8 @@ public class Parser {
                 return tmpStack.peek().symbolTable().getSymbol(symbolName);
             tmpStack.pop();
         }
+        if (globals.hasSymbol(symbolName))
+            return globals.getSymbol(symbolName);
         return null;
     }
 
@@ -328,6 +336,8 @@ public class Parser {
                 return tmpStack.peek().symbolTable().getMixin(mixinName);
             tmpStack.pop();
         }
+        if (globals.hasMixin(mixinName))
+            return globals.getMixin(mixinName);
         return null;
     }
 
@@ -400,7 +410,7 @@ public class Parser {
             consumeWhitespaces();
             consumeNewlines();
             if (tokenizer.nextTokenType() == TokenType.MIRO_IDENT_TOKEN
-                    || (tokenizer.nextTokenType() == TokenType.IDENT_TOKEN && "if".equals(tokenizer.nextTokenString())))
+                    || (tokenizer.nextTokenType() == TokenType.IDENT_TOKEN && ("if".equals(tokenizer.nextTokenString()) || "for".equals(tokenizer.nextTokenString()))))
                 parseScript();
             else
                 parseCss();
@@ -844,5 +854,183 @@ public class Parser {
         else
             consume(TokenType.EOF);
 
+    }
+
+    private void parseScriptFor () throws MiroException {
+        consume(TokenType.IDENT_TOKEN);
+        consumeWhitespaces();
+        String key = consume(TokenType.IDENT_TOKEN);
+        String value = null;
+        consumeWhitespaces();
+        if (optional(TokenType.COMMA_TOKEN)) {
+            consumeWhitespaces();
+            value = consume(TokenType.IDENT_TOKEN);
+            consumeWhitespaces();
+        }
+        String operation = consume(TokenType.IDENT_TOKEN);
+        Calculator vCalc = new Calculator(this);
+        MiroValue objectValue = vCalc.eval();
+        consume(TokenType.COLON_TOKEN);
+
+        consume(TokenType.NEWLINE_TOKEN);
+        consume(TokenType.MIRO_INDENT_TOKEN);
+
+        List<Token> forContent = new ArrayList<>();
+
+        int indents = 0;
+        do {
+            if (tokenizer.nextTokenType() == TokenType.MIRO_INDENT_TOKEN)
+                indents++;
+            else if (tokenizer.nextTokenType() == TokenType.MIRO_DEDENT_TOKEN)
+                indents--;
+            forContent.add(tokenizer.getNext());
+        } while (!(indents == 0 && tokenizer.nextTokenType() == TokenType.MIRO_DEDENT_TOKEN) && !(tokenizer.nextTokenType() == TokenType.EOF));
+
+        if (tokenizer.nextTokenType() != TokenType.EOF)
+            consume(TokenType.MIRO_DEDENT_TOKEN);
+
+
+        if ("in".equals(operation)) {
+            if (objectValue instanceof com.sirweb.miro.parsing.values.miro.List) {
+                int index = 0;
+                for (MiroValue currentValue : ((com.sirweb.miro.parsing.values.miro.List) objectValue).getValues()) {
+                    Tokenizer forTokenizer = new Tokenizer(forContent);
+                    Parser forParser = new Parser(forTokenizer);
+
+                    SymbolTable fullSymbols = getFullSymbolTable();
+
+                    for (String symbol : fullSymbols.getSymbols())
+                        forParser.setGlobal(symbol, fullSymbols.getSymbol(symbol));
+                    for (MiroMixin mixin : fullSymbols.getMixins())
+                        forParser.setGlobal(mixin);
+
+                    if (value == null)
+                        forParser.setGlobal(key, currentValue);
+                    else {
+                        forParser.setGlobal(key, new Numeric(index, Unit.NONE));
+                        forParser.setGlobal(value, currentValue);
+                    }
+
+                    MiroStylesheet forStylesheet = forParser.parse();
+
+                    for (Statement statement : forStylesheet.getStatements())
+                        stack.peek().addStatement(statement);
+
+
+                    for (Block block : forStylesheet.getBlocks())
+                        stack.peek().addBlock(block);
+
+                    for (String symbol : forStylesheet.symbolTable().getSymbols())
+                        stack.peek().symbolTable().setSymbol(symbol, forStylesheet.symbolTable().getSymbol(symbol));
+                    index++;
+                }
+            }
+            else if (objectValue instanceof StringValue) {
+                for (int index = 0; index < ((StringValue) objectValue).getValue().length(); index++) {
+                    Tokenizer forTokenizer = new Tokenizer(forContent);
+                    Parser forParser = new Parser(forTokenizer);
+
+                    SymbolTable fullSymbols = getFullSymbolTable();
+
+                    for (String symbol : fullSymbols.getSymbols())
+                        forParser.setGlobal(symbol, fullSymbols.getSymbol(symbol));
+                    for (MiroMixin mixin : fullSymbols.getMixins())
+                        forParser.setGlobal(mixin);
+
+                    if (value == null)
+                        forParser.setGlobal(key, new StringValue(((StringValue) objectValue).getValue().charAt(index) + ""));
+                    else {
+                        forParser.setGlobal(key, new Numeric(index, Unit.NONE));
+                        forParser.setGlobal(value, new StringValue(((StringValue) objectValue).getValue().charAt(index) + ""));
+                    }
+
+                    MiroStylesheet forStylesheet = forParser.parse();
+
+                    for (Statement statement : forStylesheet.getStatements())
+                        stack.peek().addStatement(statement);
+
+
+                    for (Block block : forStylesheet.getBlocks())
+                        stack.peek().addBlock(block);
+
+                    for (String symbol : forStylesheet.symbolTable().getSymbols())
+                        stack.peek().symbolTable().setSymbol(symbol, forStylesheet.symbolTable().getSymbol(symbol));
+                }
+            }
+            else if (objectValue instanceof  Dictionary) {
+                for (String keyIdent : ((Dictionary) objectValue).getKeys()) {
+                    Tokenizer forTokenizer = new Tokenizer(forContent);
+                    Parser forParser = new Parser(forTokenizer);
+
+                    SymbolTable fullSymbols = getFullSymbolTable();
+
+                    for (String symbol : fullSymbols.getSymbols())
+                        forParser.setGlobal(symbol, fullSymbols.getSymbol(symbol));
+                    for (MiroMixin mixin : fullSymbols.getMixins())
+                        forParser.setGlobal(mixin);
+
+                    if (value == null) {
+                        com.sirweb.miro.parsing.values.miro.List valList = new com.sirweb.miro.parsing.values.miro.List();
+                        valList.addValue(new Ident(keyIdent));
+                        valList.addValue(((Dictionary) objectValue).get(keyIdent));
+                        forParser.setGlobal(key, valList);
+                    }
+                    else {
+                        forParser.setGlobal(key, new Ident(keyIdent));
+                        forParser.setGlobal(value, ((Dictionary) objectValue).get(keyIdent));
+                    }
+
+                    MiroStylesheet forStylesheet = forParser.parse();
+
+                    for (Statement statement : forStylesheet.getStatements())
+                        stack.peek().addStatement(statement);
+
+
+                    for (Block block : forStylesheet.getBlocks())
+                        stack.peek().addBlock(block);
+
+                    for (String symbol : forStylesheet.symbolTable().getSymbols())
+                        stack.peek().symbolTable().setSymbol(symbol, forStylesheet.symbolTable().getSymbol(symbol));
+                }
+            }
+            else
+                throw new MiroParserException("for ... in cannot be applied to value of type "+operation.getClass().getSimpleName());
+        }
+        else if ("to".equals(operation)) {
+            if (value != null)
+                throw new MiroParserException("for " + key + ", "+value+" to is not defined. for ... to ... only takes one index");
+            if (!(objectValue instanceof Numeric))
+                throw new MiroParserException("for ... to ... can only be applied to Numerics");
+            if (((Numeric) objectValue).getUnit() != Unit.NONE)
+                throw new MiroParserException("for ... to ... can only be applied to Numerics without a unit");
+
+            for (int index = 0; index < ((Numeric) objectValue).getNormalizedValue(); index++) {
+                Tokenizer forTokenizer = new Tokenizer(forContent);
+                Parser forParser = new Parser(forTokenizer);
+
+                SymbolTable fullSymbols = getFullSymbolTable();
+
+                for (String symbol : fullSymbols.getSymbols())
+                    forParser.setGlobal(symbol, fullSymbols.getSymbol(symbol));
+                for (MiroMixin mixin : fullSymbols.getMixins())
+                    forParser.setGlobal(mixin);
+
+                    forParser.setGlobal(key, new Numeric(index, Unit.NONE));
+                MiroStylesheet forStylesheet = forParser.parse();
+
+                for (Statement statement : forStylesheet.getStatements())
+                    stack.peek().addStatement(statement);
+
+
+                for (Block block : forStylesheet.getBlocks())
+                    stack.peek().addBlock(block);
+
+                for (String symbol : forStylesheet.symbolTable().getSymbols())
+                    stack.peek().symbolTable().setSymbol(symbol, forStylesheet.symbolTable().getSymbol(symbol));
+            }
+
+        }
+        else
+            throw new MiroParserException("for ... " + operation + " ... is an unknown operation");
     }
 }

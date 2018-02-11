@@ -26,4 +26,6 @@ public abstract class Element {
     public Iterable<Statement> getStatements () { return statements; }
     public void addStatement (Statement statement) { statements.add(statement); }
     public boolean hasStatements () { return !statements.isEmpty(); }
+
+    public void replaceSymbolTable (SymbolTable newSymbolTable) { this.symbolTable = newSymbolTable; }
 }
