@@ -59,6 +59,23 @@ public class Parser {
             tokenizer.getNext();
     }
 
+    public void consumeBlock () {
+        int indents = 0;
+        while (true) {
+            if (tokenizer.nextTokenType() == TokenType.MIRO_INDENT_TOKEN)
+                indents++;
+            else if (tokenizer.nextTokenType() == TokenType.MIRO_DEDENT_TOKEN) {
+                if (indents == 0)
+                    return;
+                else
+                    indents--;
+            }
+            else if (tokenizer.nextTokenType() == TokenType.EOF)
+                return;
+            tokenizer.getNext();
+        }
+    }
+
     public void consumeNewlines () {
         while (tokenizer.nextTokenType() == TokenType.NEWLINE_TOKEN)
             tokenizer.getNext();
@@ -130,10 +147,12 @@ public class Parser {
                 Token token = tokenizer.getNext();
                 if (Color.knowsColor(token.getToken()))
                     parsedValue = new Color(Color.getDefaultColorDictionary().get(token.getToken()));
+                else if ("TRUE".equals(token.getToken()) || "FALSE".equals(token.getToken()))
+                    parsedValue = new Bool("TRUE".equals(token.getToken()) ? true : false);
                 else
                     parsedValue = new Ident(token);
             } else if (tokenizer.nextTokenType() == TokenType.O_R_TOKEN) {
-                parsedValue = new Calculator(this).eval();
+                parsedValue = new Calculator(this, true).eval();
             } else if (tokenizer.nextTokenType() == TokenType.HASH_TOKEN)
                 parsedValue = new Color(tokenizer.getNext().getToken());
             else if (tokenizer.nextTokenType() == TokenType.FUNCTION_TOKEN) {
@@ -282,9 +301,14 @@ public class Parser {
     }
 
     private void parseScript () throws MiroException {
-        if (tokenizer.nextTokenType() == TokenType.MIRO_IDENT_TOKEN)
+        if (tokenizer.nextTokenType() == TokenType.MIRO_IDENT_TOKEN) {
             parseScriptAssignment();
-        optional(TokenType.SEMICOLON_TOKEN);
+            optional(TokenType.SEMICOLON_TOKEN);
+        }
+        else if (tokenizer.nextTokenType() == TokenType.IDENT_TOKEN) {
+            if ("if".equals(tokenizer.nextTokenString()))
+                parseScriptIf();
+        }
     }
 
     private MiroValue findSymbol (String symbolName) {
@@ -375,7 +399,8 @@ public class Parser {
                 && tokenizer.nextTokenType() != TokenType.MIRO_DEDENT_TOKEN) {
             consumeWhitespaces();
             consumeNewlines();
-            if (tokenizer.nextTokenType() == TokenType.MIRO_IDENT_TOKEN)
+            if (tokenizer.nextTokenType() == TokenType.MIRO_IDENT_TOKEN
+                    || (tokenizer.nextTokenType() == TokenType.IDENT_TOKEN && "if".equals(tokenizer.nextTokenString())))
                 parseScript();
             else
                 parseCss();
@@ -793,6 +818,31 @@ public class Parser {
 
         for (Block block : mixinStylesheet.getBlocks())
             stack.peek().addBlock(block);
+
+    }
+
+    private void parseScriptIf () throws MiroException {
+        consume(TokenType.IDENT_TOKEN);
+        consumeWhitespaces();
+        Calculator conditionCalculator = new Calculator(this);
+        MiroValue condition = conditionCalculator.eval();
+
+        consumeWhitespaces();
+        consume(TokenType.COLON_TOKEN);
+        consume(TokenType.NEWLINE_TOKEN);
+        consume(TokenType.MIRO_INDENT_TOKEN);
+
+        if (condition.getBoolean())
+            parseBlockContent();
+        else
+            consumeBlock();
+
+        consumeNewlines();
+
+        if (tokenizer.nextTokenType() == TokenType.MIRO_DEDENT_TOKEN)
+            consume(TokenType.MIRO_DEDENT_TOKEN);
+        else
+            consume(TokenType.EOF);
 
     }
 }

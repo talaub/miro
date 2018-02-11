@@ -240,6 +240,10 @@ public class Tokenizer {
         return position < tokenstream.size() ? tokenstream.get(position).getType() : TokenType.EOF;
     }
 
+    public String nextTokenString() {
+        return position < tokenstream.size() ? tokenstream.get(position).getToken() : "";
+    }
+
     public boolean lineOpensBlock () throws MiroTokenizerException, MiroIndentationException {
         Tokenizer tokenizer = this.clone();
         tokenizer.tokenize();

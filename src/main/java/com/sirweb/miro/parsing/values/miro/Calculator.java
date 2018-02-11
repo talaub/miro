@@ -69,16 +69,24 @@ public class Calculator implements MiroValue {
     private List<Object> postfix;
 
     public Calculator (Parser parser) throws MiroException {
+        this(parser, false);
+    }
+
+    public Calculator (Parser parser, boolean openedByBracket) throws MiroException {
         this.parser = parser;
         this.tokenizer = parser.tokenizer();
         this.postfix = new ArrayList<>();
-        parseCalculation();
+        parseCalculation(openedByBracket);
     }
 
     public List<Object> getPostfix () { return postfix; }
 
-    private void parseCalculation() throws MiroException {
+    private void parseCalculation(boolean openedByBracket) throws MiroException {
         Stack<Operator> operators = new Stack<>();
+
+        if (openedByBracket)
+            parser.consume(TokenType.O_R_TOKEN);
+
         parser.consumeWhitespaces();
 
         //parser.optional(TokenType.O_R_TOKEN);
@@ -102,7 +110,8 @@ public class Calculator implements MiroValue {
                 && tokenizer.nextTokenType() != TokenType.EOF
                 && tokenizer.nextTokenType() != TokenType.MIRO_EXCLAMATION_TOKEN
                 && tokenizer.nextTokenType() != TokenType.MIRO_DEBUG_TOKEN
-                && tokenizer.nextTokenType() != TokenType.C_Q_TOKEN);
+                && tokenizer.nextTokenType() != TokenType.C_Q_TOKEN
+                && tokenizer.nextTokenType() != TokenType.COLON_TOKEN);
         while (!operators.isEmpty())
             postfix.add(operators.pop());
 
@@ -110,7 +119,8 @@ public class Calculator implements MiroValue {
         parser.consumeWhitespaces();
         parser.consumeNewlines();
 
-        //parser.optional(TokenType.C_R_TOKEN);
+        if (openedByBracket)
+            parser.consume(TokenType.C_R_TOKEN);
 
     }
 
