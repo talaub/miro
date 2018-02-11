@@ -20,7 +20,7 @@ public class Miro {
     public Miro (String content) throws MiroException {
         Tokenizer tokenizer = new Tokenizer(content);
         tokenizer.tokenize();
-        Parser parser = new Parser(tokenizer);
+        Parser parser = new Parser(tokenizer, "/home/tamino/Schreibtisch/test.miro");
         this.stylesheet = parser.parse();
     }
 

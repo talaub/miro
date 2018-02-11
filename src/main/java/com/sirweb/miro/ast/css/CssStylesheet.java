@@ -5,9 +5,11 @@ import java.util.List;
 
 public class CssStylesheet {
     private List<CssElement> elements;
+    private List<CssImportRule> importRules;
 
     public CssStylesheet () {
         this.elements = new ArrayList<>();
+        this.importRules = new ArrayList<>();
     }
 
     public List<CssElement> getElements () { return elements; }
@@ -26,4 +28,8 @@ public class CssStylesheet {
     public void addElement(CssElement cssElement) {
         elements.add(cssElement);
     }
+
+    public void addImportRule (CssImportRule importRule) { this.importRules.add(importRule); }
+
+    public Iterable<CssImportRule> getImportRules () { return importRules; }
 }

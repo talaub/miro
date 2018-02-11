@@ -2,6 +2,7 @@ package com.sirweb.miro.parsing;
 
 import com.sirweb.miro.ast.Block;
 import com.sirweb.miro.ast.Element;
+import com.sirweb.miro.ast.ImportRule;
 import com.sirweb.miro.ast.Statement;
 import com.sirweb.miro.ast.css.CssStylesheet;
 import com.sirweb.miro.ast.miro.*;
@@ -14,6 +15,7 @@ import com.sirweb.miro.parsing.values.Value;
 import com.sirweb.miro.parsing.values.miro.*;
 import com.sirweb.miro.util.Reader;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -25,10 +27,14 @@ public class Parser {
     private Stack<Element> stack;
     private SymbolTable globals;
     private boolean inCollection = false;
+    private String filePath = "";
 
-    public Parser (Tokenizer tokenizer) {
+    public Parser (Tokenizer tokenizer) { this(tokenizer, "/"); }
+
+    public Parser (Tokenizer tokenizer, String filePath) {
         this.tokenizer = tokenizer;
         this.globals = new SymbolTable();
+        this.filePath = filePath;
     }
 
     public void setGlobal (String name, MiroValue value) {
@@ -159,6 +165,8 @@ public class Parser {
                 parsedValue = new Calculator(this, true).eval();
             } else if (tokenizer.nextTokenType() == TokenType.HASH_TOKEN)
                 parsedValue = new Color(tokenizer.getNext().getToken());
+            else if (tokenizer.nextTokenType() == TokenType.URL_TOKEN)
+                parsedValue = new Url(tokenizer.getNext());
             else if (tokenizer.nextTokenType() == TokenType.FUNCTION_TOKEN) {
                 String functionName = consume(TokenType.FUNCTION_TOKEN);
                 functionName = functionName.substring(0, functionName.length() - 1);
@@ -482,6 +490,9 @@ public class Parser {
             case "use":
                 parseUse();
                 break;
+            case "import":
+                parseImport();
+                break;
             default:
                 parseUnknownAtRule();
                 break;
@@ -667,6 +678,75 @@ public class Parser {
 
         for (String symbol : st.getSymbols())
             stack.peek().symbolTable().setSymbol(symbol, st.getSymbol(symbol));
+
+        optional(TokenType.SEMICOLON_TOKEN);
+
+    }
+
+    private void parseImport () throws MiroException {
+        consumeWhitespaces();
+
+        Calculator calculator = new Calculator(this);
+        MiroValue urlValue = calculator.eval();
+
+        boolean isMiroImport = false;
+        if (urlValue instanceof StringValue) {
+            if (((StringValue) urlValue).getValue().endsWith(".miro"))
+                isMiroImport = true;
+            else
+                stack.peek().addImportRule(new MiroImportRule(urlValue));
+        }
+        else if (urlValue instanceof Url) {
+            if (((Url) urlValue).getUrl().endsWith(".miro"))
+                isMiroImport = true;
+            else
+                stack.peek().addImportRule(new MiroImportRule(urlValue));
+        }
+        else
+            throw new MiroImportException("Cannot import file from value type " + urlValue.getClass().getSimpleName());
+
+        if (isMiroImport) {
+            String importUrl = (urlValue instanceof StringValue) ? ((StringValue) urlValue).getValue() : ((Url) urlValue).getUrl();
+
+            if (!(importUrl.startsWith("/")
+                || importUrl.startsWith("http"))) {
+                String[] partElems = filePath.split("/");
+                for (int i = partElems.length - 2; i >= 0; i--)
+                    importUrl = partElems[i] + "/" + importUrl;
+            }
+
+            File importFile = new File(importUrl);
+            if (!(importFile.exists() && !importFile.isDirectory()))
+                throw new MiroImportException("The specified file " + importUrl + " could not be found");
+
+            Tokenizer tempTokenizer = new Tokenizer(new Reader(importUrl).read());
+            tempTokenizer.tokenize();
+
+            SymbolTable fullSymbols = getFullSymbolTable();
+
+            Parser tempParser = new Parser(tempTokenizer);
+            for (String symbol : fullSymbols.getSymbols())
+                tempParser.setGlobal(symbol, fullSymbols.getSymbol(symbol));
+            for (MiroMixin mixin : fullSymbols.getMixins())
+                tempParser.setGlobal(mixin);
+
+            MiroStylesheet tempStylesheet = tempParser.parse();
+
+            for (String symbol : tempStylesheet.symbolTable().getSymbols())
+                stack.peek().symbolTable().setSymbol(symbol, tempStylesheet.symbolTable().getSymbol(symbol));
+
+            for (MiroMixin mixin : tempStylesheet.symbolTable().getMixins())
+                stack.peek().symbolTable().addMixin(mixin);
+
+            for (Block block : tempStylesheet.getBlocks())
+                stack.peek().addBlock(block);
+            for (Statement statement : tempStylesheet.getStatements())
+                stack.peek().addStatement(statement);
+            for (ImportRule importRule : tempStylesheet.getImportRules())
+                stack.peek().addImportRule(importRule);
+
+
+        }
 
         optional(TokenType.SEMICOLON_TOKEN);
 
@@ -920,6 +1000,9 @@ public class Parser {
                     for (Block block : forStylesheet.getBlocks())
                         stack.peek().addBlock(block);
 
+                    for (ImportRule importRule : forStylesheet.getImportRules())
+                        stack.peek().addImportRule(importRule);
+
                     for (String symbol : forStylesheet.symbolTable().getSymbols())
                         stack.peek().symbolTable().setSymbol(symbol, forStylesheet.symbolTable().getSymbol(symbol));
                     index++;
@@ -949,6 +1032,8 @@ public class Parser {
                     for (Statement statement : forStylesheet.getStatements())
                         stack.peek().addStatement(statement);
 
+                    for (ImportRule importRule : forStylesheet.getImportRules())
+                        stack.peek().addImportRule(importRule);
 
                     for (Block block : forStylesheet.getBlocks())
                         stack.peek().addBlock(block);
@@ -985,6 +1070,8 @@ public class Parser {
                     for (Statement statement : forStylesheet.getStatements())
                         stack.peek().addStatement(statement);
 
+                    for (ImportRule importRule : forStylesheet.getImportRules())
+                        stack.peek().addImportRule(importRule);
 
                     for (Block block : forStylesheet.getBlocks())
                         stack.peek().addBlock(block);
@@ -1021,6 +1108,8 @@ public class Parser {
                 for (Statement statement : forStylesheet.getStatements())
                     stack.peek().addStatement(statement);
 
+                for (ImportRule importRule : forStylesheet.getImportRules())
+                    stack.peek().addImportRule(importRule);
 
                 for (Block block : forStylesheet.getBlocks())
                     stack.peek().addBlock(block);

@@ -1,11 +1,9 @@
 package com.sirweb.miro.ast.converter;
 
 import com.sirweb.miro.ast.Block;
+import com.sirweb.miro.ast.ImportRule;
 import com.sirweb.miro.ast.Statement;
-import com.sirweb.miro.ast.css.CssBlock;
-import com.sirweb.miro.ast.css.CssMediaQuery;
-import com.sirweb.miro.ast.css.CssStatement;
-import com.sirweb.miro.ast.css.CssStylesheet;
+import com.sirweb.miro.ast.css.*;
 import com.sirweb.miro.ast.miro.MiroBlock;
 import com.sirweb.miro.ast.miro.MiroMediaQuery;
 import com.sirweb.miro.ast.miro.MiroStylesheet;
@@ -74,6 +72,9 @@ public class MiroToCssConverter {
                 (currentMediaQuery == null) ? ((CssBlock) cssStylesheet.getElement(header))
                 : new CssBlock(header)
                 : new CssBlock(header);
+
+        for (ImportRule importRule : block.getImportRules())
+            cssStylesheet.addImportRule(new CssImportRule(importRule.getUrlValue().toString()));
 
         for (Statement statement : block.getStatements())
             cssBlock.addStatement(new CssStatement(statement.getProperty(), statement.getValue().toString(), statement.isImportant()));

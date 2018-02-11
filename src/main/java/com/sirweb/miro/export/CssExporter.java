@@ -24,6 +24,9 @@ public class CssExporter implements Exporter {
     }
 
     public void export (OutputStream out) throws IOException {
+        for (CssImportRule cssImportRule : stylesheet.getImportRules())
+            out.write(("@import " + cssImportRule.getUrlContent() + ";").getBytes());
+
         for (CssElement element : stylesheet.getElements()) {
 
             if (element instanceof CssMediaQuery) {
