@@ -10,9 +10,7 @@ import java.io.PrintWriter;
 public class CLI {
 
     public static void main (String[] args) {
-        String code = "div\n    color red\n    &.green\n        color green\n    &.blue\n        color blue";
-        Reader reader = new Reader("/home/tamino/Schreibtisch/test.miro");
-        code = reader.read();
+        String code = "$bg = #73ac21\ndiv\n    background-color $bg\n    if $bg.isDark():\n        color white\n    else:\n        color black";
         System.out.println(code);
         System.out.println("------------------------");
         try {

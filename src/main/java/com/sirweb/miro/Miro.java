@@ -18,9 +18,10 @@ import java.io.PrintWriter;
 public class Miro {
     private MiroStylesheet stylesheet;
     public Miro (String content) throws MiroException {
+
         Tokenizer tokenizer = new Tokenizer(content);
         tokenizer.tokenize();
-        Parser parser = new Parser(tokenizer, "/home/tamino/Schreibtisch/test.miro");
+        Parser parser = new Parser(tokenizer);
         this.stylesheet = parser.parse();
     }
 

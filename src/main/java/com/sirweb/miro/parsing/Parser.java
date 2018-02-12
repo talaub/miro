@@ -944,8 +944,26 @@ public class Parser {
 
         consumeNewlines();
 
-        if (tokenizer.nextTokenType() == TokenType.MIRO_DEDENT_TOKEN)
+        if (tokenizer.nextTokenType() == TokenType.MIRO_DEDENT_TOKEN) {
             consume(TokenType.MIRO_DEDENT_TOKEN);
+            consumeNewlines();
+            if (tokenizer.nextTokenType() == TokenType.IDENT_TOKEN && "else".equals(tokenizer.nextTokenString())) {
+                consume(TokenType.IDENT_TOKEN);
+                consumeWhitespaces();
+                consume(TokenType.COLON_TOKEN);
+                consume(TokenType.NEWLINE_TOKEN);
+                consume(TokenType.MIRO_INDENT_TOKEN);
+                if (condition.getBoolean())
+                    consumeBlock();
+                else
+                    parseBlockContent();
+                consumeNewlines();
+                if (tokenizer.nextTokenType() == TokenType.MIRO_DEDENT_TOKEN)
+                    consume(TokenType.MIRO_DEDENT_TOKEN);
+                else
+                    consume(TokenType.EOF);
+            }
+        }
         else
             consume(TokenType.EOF);
 
