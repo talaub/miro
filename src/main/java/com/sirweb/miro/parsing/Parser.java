@@ -4,20 +4,17 @@ import com.sirweb.miro.ast.Block;
 import com.sirweb.miro.ast.Element;
 import com.sirweb.miro.ast.ImportRule;
 import com.sirweb.miro.ast.Statement;
-import com.sirweb.miro.ast.css.CssStylesheet;
 import com.sirweb.miro.ast.miro.*;
 import com.sirweb.miro.exceptions.*;
 import com.sirweb.miro.lexer.Token;
 import com.sirweb.miro.lexer.TokenType;
 import com.sirweb.miro.lexer.Tokenizer;
 import com.sirweb.miro.parsing.values.Unit;
-import com.sirweb.miro.parsing.values.Value;
 import com.sirweb.miro.parsing.values.miro.*;
 import com.sirweb.miro.util.Reader;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Stack;
 
@@ -303,6 +300,10 @@ public class Parser {
         return root;
     }
 
+    public MiroValue parseFunction () throws MiroException {
+        return null;
+    }
+
     private void parseStylesheet () throws MiroException {
         root = new MiroStylesheet();
         //for (String key : globals.getSymbols())
@@ -492,6 +493,19 @@ public class Parser {
                 break;
             case "import":
                 parseImport();
+                break;
+            case "color":
+            case "string":
+            case "stringvalue":
+            case "bool":
+            case "boolean":
+            case "ident":
+            case "function":
+            case "numeric":
+            case "list":
+            case "dictionary":
+            case "url":
+                parseValueExtension(tokenString);
                 break;
             default:
                 parseUnknownAtRule();
@@ -753,6 +767,7 @@ public class Parser {
     }
 
     private void parseUnknownAtRule () throws MiroException {
+        String atRule = tokenizer.nextTokenString().substring(1);
         if (tokenizer.lineOpensBlock())
             parseUnknownAtBlock();
     }
@@ -1121,5 +1136,93 @@ public class Parser {
         }
         else
             throw new MiroParserException("for ... " + operation + " ... is an unknown operation");
+    }
+
+    private void parseValueExtension (String extened) throws MiroException {
+        optional(TokenType.COLON_TOKEN);
+        consume(TokenType.NEWLINE_TOKEN);
+        consume(TokenType.MIRO_INDENT_TOKEN);
+        while (tokenizer.nextTokenType() != TokenType.MIRO_DEDENT_TOKEN
+                && tokenizer.nextTokenType() != TokenType.EOF) {
+            switch(extened) {
+                case "color":
+                    Color.addFunc(parseValueFunctionDeclaration());
+                    break;
+                case "bool":
+                case "boolean":
+                    Bool.addFunc(parseValueFunctionDeclaration());
+                    break;
+            }
+        }
+        if (tokenizer.nextTokenType() == TokenType.MIRO_DEDENT_TOKEN)
+            consume(TokenType.MIRO_DEDENT_TOKEN);
+        else
+            consume(TokenType.EOF);
+    }
+
+    private MiroFunc parseValueFunctionDeclaration () throws MiroException {
+        consumeNewlinesAndWhitespaces();
+        String ident = consume(TokenType.IDENT_TOKEN);
+        if (!"func".equals(ident))
+            throw new MiroParserException("Unexpected ident " + ident + " expected func");
+        consumeWhitespaces();
+        String functionName = consume(TokenType.FUNCTION_TOKEN);
+        functionName = functionName.substring(0, functionName.length()-1);
+        MiroFunc func = new MiroFunc(functionName);
+
+        boolean startDefaultValues = false;
+        while (tokenizer.nextTokenType() != TokenType.C_R_TOKEN) {
+            consumeWhitespaces();
+            MiroFuncParameter parameter = parseMiroFuncDeclarationParameter();
+
+            if (startDefaultValues && parameter.getDefaultValue() == null)
+                throw new MiroMixinException("Seperate parameters with and without default values");
+
+            if (parameter.getDefaultValue() != null)
+                startDefaultValues = true;
+            func.addParameter(parameter);
+            consumeWhitespaces();
+            optional(TokenType.COMMA_TOKEN);
+            consumeWhitespaces();
+        }
+
+
+        consume(TokenType.C_R_TOKEN);
+        consumeWhitespaces();
+        consume(TokenType.COLON_TOKEN);
+        consumeWhitespaces();
+        consume(TokenType.NEWLINE_TOKEN);
+        consume(TokenType.MIRO_INDENT_TOKEN);
+
+        int indents = 0;
+        do {
+            if (tokenizer.nextTokenType() == TokenType.MIRO_INDENT_TOKEN)
+                indents++;
+            else if (tokenizer.nextTokenType() == TokenType.MIRO_DEDENT_TOKEN)
+                indents--;
+            func.addContent(tokenizer.getNext());
+        } while (!(indents == 0 && tokenizer.nextTokenType() == TokenType.MIRO_DEDENT_TOKEN) && !(tokenizer.nextTokenType() == TokenType.EOF));
+
+        if (tokenizer.nextTokenType() != TokenType.EOF)
+            consume(TokenType.MIRO_DEDENT_TOKEN);
+
+
+        return func;
+    }
+
+    private MiroFuncParameter parseMiroFuncDeclarationParameter () throws MiroException {
+        consumeWhitespaces();
+        String name = consume(TokenType.IDENT_TOKEN);
+        MiroValue defaultValue = null;
+        consumeWhitespaces();
+
+        if (tokenizer.nextTokenType() == TokenType.EQUAL_TOKEN) {
+            consume(TokenType.EQUAL_TOKEN);
+            consumeWhitespaces();
+            defaultValue = parseValue(true);
+            consumeWhitespaces();
+        }
+
+        return new MiroFuncParameter(name, defaultValue);
     }
 }

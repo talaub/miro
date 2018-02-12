@@ -1,18 +1,21 @@
 package com.sirweb.miro.parsing.values.miro;
 
-import com.sirweb.miro.exceptions.MiroFuncParameterException;
-import com.sirweb.miro.exceptions.MiroParserException;
-import com.sirweb.miro.exceptions.MiroUnimplementedFuncException;
+import com.sirweb.miro.ast.miro.MiroFunc;
+import com.sirweb.miro.ast.miro.MiroFuncParameter;
+import com.sirweb.miro.ast.miro.MiroMixinParameter;
+import com.sirweb.miro.exceptions.*;
+import com.sirweb.miro.lexer.Tokenizer;
+import com.sirweb.miro.parsing.Parser;
 import com.sirweb.miro.parsing.values.Unit;
 import com.sirweb.miro.parsing.values.Value;
 
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 
 public class Color implements MiroValue {
     private int red, green, blue, alpha;
+
+    private static List<MiroFunc> funcs = new ArrayList<>();
 
     public Color(int r, int g, int b, int a) {
         red = r;
@@ -252,7 +255,7 @@ public class Color implements MiroValue {
     }
 
     @Override
-    public Value callFunc(String functionName, List<MiroValue> parameters) throws MiroParserException {
+    public Value callFunc(String functionName, List<MiroValue> parameters) throws MiroException {
         switch (functionName) {
             case "getRed":
                 if (parameters.size() != 0)
@@ -271,45 +274,49 @@ public class Color implements MiroValue {
                     throw new MiroFuncParameterException(functionName, 0, parameters.size());
                 return new Numeric(alpha / 255.0, Unit.NONE);
             case "setRed":
+                Color tmpColorR = new Color(red, green, blue);
                 if (parameters.size() != 1)
                     throw new MiroFuncParameterException(functionName, 1, parameters.size());
                 MiroValue valueRed = parameters.get(0);
                 if (!(valueRed instanceof Numeric))
                     throw new MiroFuncParameterException("setRed function parameter has to be numeric");
                 if (((Numeric) valueRed).getUnit() == Unit.NONE)
-                    red = (int) ((Numeric) valueRed).getValue();
+                    tmpColorR.red = (int) ((Numeric) valueRed).getValue();
                 else if (((Numeric) valueRed).getUnit() == Unit.PERCENT)
-                    red = (int) ((((Numeric) valueRed).getValue() / 100.0) * 255.0);
+                    tmpColorR.red = (int) ((((Numeric) valueRed).getValue() / 100.0) * 255.0);
                 else
                     throw new MiroFuncParameterException("setRed function parameter has to be percent or simple number");
-                return this;
+                return tmpColorR;
             case "setGreen":
+                Color tmpColorG = new Color(red, green, blue);
                 if (parameters.size() != 1)
                     throw new MiroFuncParameterException(functionName, 1, parameters.size());
                 MiroValue valueGreen = parameters.get(0);
                 if (!(valueGreen instanceof Numeric))
                     throw new MiroFuncParameterException("setGreen function parameter has to be numeric");
                 if (((Numeric) valueGreen).getUnit() == Unit.NONE)
-                    green = (int) ((Numeric) valueGreen).getValue();
+                    tmpColorG.green = (int) ((Numeric) valueGreen).getValue();
                 else if (((Numeric) valueGreen).getUnit() == Unit.PERCENT)
-                    green = (int) ((((Numeric) valueGreen).getValue() / 100.0) * 255.0);
+                    tmpColorG.green = (int) ((((Numeric) valueGreen).getValue() / 100.0) * 255.0);
                 else
                     throw new MiroFuncParameterException("setGreen function parameter has to be percent or simple number");
-                return this;
+                return tmpColorG;
             case "setBlue":
+                Color tmpColorB = new Color(red, green, blue);
                 if (parameters.size() != 1)
                     throw new MiroFuncParameterException(functionName, 1, parameters.size());
                 MiroValue valueBlue = parameters.get(0);
                 if (!(valueBlue instanceof Numeric))
                     throw new MiroFuncParameterException("setBlue function parameter has to be numeric");
                 if (((Numeric) valueBlue).getUnit() == Unit.NONE)
-                    blue = (int) ((Numeric) valueBlue).getValue();
+                    tmpColorB.blue = (int) ((Numeric) valueBlue).getValue();
                 else if (((Numeric) valueBlue).getUnit() == Unit.PERCENT)
-                    blue = (int) ((((Numeric) valueBlue).getValue() / 100.0) * 255.0);
+                    tmpColorB.blue = (int) ((((Numeric) valueBlue).getValue() / 100.0) * 255.0);
                 else
                     throw new MiroFuncParameterException("setBlue function parameter has to be percent or simple number");
-                return this;
+                return tmpColorB;
             case "setAlpha":
+                Color tmpColorA = new Color(red, green, blue);
                 if (parameters.size() != 1)
                     throw new MiroFuncParameterException(functionName, 1, parameters.size());
                 MiroValue valueAlpha = parameters.get(0);
@@ -317,16 +324,50 @@ public class Color implements MiroValue {
                     throw new MiroFuncParameterException("setBlue function parameter has to be numeric");
                 if (((Numeric) valueAlpha).getUnit() == Unit.NONE)
                     if (((Numeric) valueAlpha).getValue() <= 1.0)
-                        alpha = (int) ((Numeric) valueAlpha).getValue() * 255;
+                        tmpColorA.alpha = (int) ((Numeric) valueAlpha).getValue() * 255;
                     else
-                        alpha = (int) ((Numeric) valueAlpha).getValue();
+                        tmpColorA.alpha = (int) ((Numeric) valueAlpha).getValue();
                 else if (((Numeric) valueAlpha).getUnit() == Unit.PERCENT)
-                    alpha = (int) ((((Numeric) valueAlpha).getValue() / 100.0) * 255.0);
+                    tmpColorA.alpha = (int) ((((Numeric) valueAlpha).getValue() / 100.0) * 255.0);
                 else
                     throw new MiroFuncParameterException("setAlpha function parameter has to be percent or simple number");
-                return this;
+                return tmpColorA;
             default:
-                throw new MiroUnimplementedFuncException(functionName, this.getClass());
+                if (hasFunc(functionName)) {
+                    Tokenizer tmpTokenizer = new Tokenizer(getFunc(functionName).getContent());
+                    tmpTokenizer.tokenize();
+                    Parser tmpParser = new Parser(tmpTokenizer);
+
+                    MiroFunc func = getFunc(functionName);
+
+                    List<MiroFuncParameter> neededParameters = new ArrayList<>();
+
+                    for (MiroFuncParameter param : func.getParameters())
+                        if (param.getDefaultValue() == null)
+                            neededParameters.add(param);
+
+                    if (parameters.size() < neededParameters.size())
+                        throw new MiroMixinException("Func Color." + functionName + " takes " + neededParameters.size() + " parameters but " + parameters.size() + " were passed");
+
+                    List<MiroValue> parameterValueList = new ArrayList<>();
+
+
+                    int i = parameters.size();
+                    for (; i < func.getParameterCount(); i++)
+                        parameterValueList.add(func.getParameter(i).getDefaultValue());
+
+                    int paramIndex = 0;
+                    for (MiroFuncParameter param : func.getParameters()) {
+                        tmpParser.setGlobal(param.getName(), parameterValueList.get(paramIndex));
+                        paramIndex++;
+                    }
+
+                    tmpParser.setGlobal("this", new Color(red, green, blue, alpha));
+
+                    return tmpParser.parse().symbolTable().getSymbol("this");
+                }
+                else
+                    throw new MiroUnimplementedFuncException(functionName, this.getClass());
 
         }
     }
@@ -350,5 +391,26 @@ public class Color implements MiroValue {
     @Override
     public boolean getBoolean() {
         return !(alpha == 0 || (red == 0 && green == 0 && blue == 0));
+    }
+
+    public static void addFunc(MiroFunc miroFunc) {
+        for (MiroFunc f : funcs) {
+            if (f.getName().equals(miroFunc.getName())) {
+                funcs.remove(f);
+                break;
+            }
+        }
+        funcs.add(miroFunc);
+    }
+
+    public static MiroFunc getFunc (String name) {
+        for (MiroFunc func : funcs)
+            if (func.getName().equals(name))
+                return func;
+        return null;
+    }
+
+    public static boolean hasFunc (String name) {
+        return getFunc(name) != null;
     }
 }
