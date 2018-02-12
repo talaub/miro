@@ -294,8 +294,10 @@ As I mentioned previously, Miro provides some basic functions to manipulate valu
 ```stylus
 @Color
     func removeBlue():
-        return $this.setBlue(0)
+        $this = $this.setBlue(0)
 ```
+
+The final value of `$this` will be returned.
 
 Let's briefly talk about collection in Miro. There are lists and dictionaries. Lists are, well, a list of values. They are completely dynamic in typing, they can contain strings, numerics, other lists and other values at the same time. A simple list can be created using spaces:
 
