@@ -728,7 +728,6 @@ public class Parser {
                 for (int i = partElems.length - 2; i >= 0; i--)
                     importUrl = partElems[i] + "/" + importUrl;
             }
-
             File importFile = new File(importUrl);
             if (!(importFile.exists() && !importFile.isDirectory()))
                 throw new MiroImportException("The specified file " + importUrl + " could not be found");

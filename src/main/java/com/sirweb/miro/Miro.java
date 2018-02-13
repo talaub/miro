@@ -25,8 +25,18 @@ public class Miro {
         this.stylesheet = parser.parse();
     }
 
-    public Miro (File file) throws MiroException {
-        this(new Reader(file.getAbsolutePath()).read());
+    public Miro (File file, File out) throws MiroException, IOException {
+        Tokenizer tokenizer = new Tokenizer(new Reader(file.getAbsolutePath()).read());
+        tokenizer.tokenize();
+        Parser parser = new Parser(tokenizer, file.getAbsolutePath());
+        this.stylesheet = parser.parse();
+
+        MiroToCssConverter converter = new MiroToCssConverter(stylesheet);
+        CssStylesheet cssStylesheet = converter.convert();
+        Exporter exporter = new CssExporter(cssStylesheet);
+        PrintStream ps = new PrintStream(out);
+        exporter.export(ps);
+        ps.close();
     }
 
     public String toCss () throws IOException {
